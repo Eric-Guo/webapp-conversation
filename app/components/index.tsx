@@ -4,8 +4,10 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import produce, { setAutoFreeze } from 'immer'
 import { useBoolean, useGetState } from 'ahooks'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import useConversation from '@/hooks/use-conversation'
 import Toast from '@/app/components/base/toast'
+import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
@@ -20,6 +22,7 @@ import Loading from '@/app/components/base/loading'
 import { replaceVarWithValues, userInputsFormToPromptVariables } from '@/utils/prompt'
 import AppUnavailable from '@/app/components/app-unavailable'
 import { API_KEY, APP_ID, APP_INFO, isShowPrompt, promptTemplate } from '@/config'
+import { OIDC_PROVIDER_ID } from '@/config/auth'
 import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 
@@ -29,9 +32,15 @@ export interface IMainProps {
 
 const Main: FC<IMainProps> = () => {
   const { t } = useTranslation()
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === 'authenticated'
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
+  const userLabel = session?.user?.email || session?.user?.name || ''
+
+  const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
+  const handleSignOut = () => signOut({ callbackUrl: '/' })
 
   /*
   * app info
@@ -153,7 +162,10 @@ const Main: FC<IMainProps> = () => {
 
     if (isNewConversation && isChatStarted) { setChatList(generateNewChatListWithOpenStatement()) }
   }
-  useEffect(handleConversationSwitch, [currConversationId, inited])
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    handleConversationSwitch()
+  }, [currConversationId, inited, isAuthenticated])
 
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
@@ -222,6 +234,8 @@ const Main: FC<IMainProps> = () => {
 
   // init
   useEffect(() => {
+    if (!isAuthenticated) { return }
+
     if (!hasSetAppConfig) {
       setAppUnavailable(true)
       return
@@ -290,7 +304,7 @@ const Main: FC<IMainProps> = () => {
         }
       }
     })()
-  }, [])
+  }, [hasSetAppConfig, isAuthenticated])
 
   const [isResponding, { setTrue: setRespondingTrue, setFalse: setRespondingFalse }] = useBoolean(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
@@ -646,6 +660,36 @@ const Main: FC<IMainProps> = () => {
     )
   }
 
+  if (status === 'loading') { return <Loading type='app' /> }
+
+  if (!isAuthenticated) {
+    return (
+      <div className='flex items-center justify-center h-screen bg-gray-50 px-4'>
+        <div className='w-full max-w-md space-y-4 rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm'>
+          <div className='flex justify-center'>
+            <AppIcon size="large" />
+          </div>
+          <div className='space-y-1'>
+            <div className='text-xl font-semibold text-gray-900'>{APP_INFO.title || 'Chat APP'}</div>
+            <p className='text-sm text-gray-600'>Sign in with your company SSO to start a conversation.</p>
+          </div>
+          {!hasSetAppConfig && (
+            <p className='text-xs text-left text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2'>
+              Set NEXT_PUBLIC_APP_ID and NEXT_PUBLIC_APP_KEY to load the chat application after signing in.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleSignIn}
+            className='w-full inline-flex items-center justify-center h-10 px-4 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+          >
+            Continue with SSO
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (appUnavailable) { return <AppUnavailable isUnknownReason={isUnknownReason} errMessage={!hasSetAppConfig ? 'Please set APP_ID and API_KEY in config/index.tsx' : ''} /> }
 
   if (!APP_ID || !APP_INFO || !promptConfig) { return <Loading type='app' /> }
@@ -657,6 +701,8 @@ const Main: FC<IMainProps> = () => {
         isMobile={isMobile}
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
+        userLabel={userLabel}
+        onSignOut={handleSignOut}
       />
       <div className="flex rounded-t-2xl bg-white overflow-hidden">
         {/* sidebar */}
