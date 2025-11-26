@@ -33,7 +33,7 @@ const authConfig: NextAuthConfig = {
       wellKnown: `${issuer}/.well-known/openid-configuration`,
       clientId,
       clientSecret,
-      authorization: { params: { scope: 'openid email' } },
+      authorization: { params: { scope: 'openid email profile departments positions main_position' } },
       checks: ['pkce', 'state', 'nonce'],
       profile(profile: Record<string, any>) {
         const id = profile.email || profile.sub || profile.preferred_username || profile.id
@@ -47,5 +47,8 @@ const authConfig: NextAuthConfig = {
   ],
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)
+const authResult = NextAuth(authConfig)
+
+export const { handlers, auth, signIn, signOut } = authResult
+export const { GET, POST } = handlers
 export { OIDC_PROVIDER_ID }
