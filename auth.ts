@@ -25,6 +25,7 @@ const authConfig: NextAuthConfig = {
   session: {
     strategy: 'jwt',
   },
+  useSecureCookies: process.env.NODE_ENV === 'production',
   providers: [
     {
       id: OIDC_PROVIDER_ID,
