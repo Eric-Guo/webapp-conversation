@@ -30,7 +30,7 @@ const authConfig: NextAuthConfig = {
       id: OIDC_PROVIDER_ID,
       name: 'Thape SSO',
       type: 'oidc',
-      wellKnown: `${issuer}/.well-known/openid-configuration`,
+      issuer,
       clientId,
       clientSecret,
       authorization: { params: { scope: 'openid email profile departments positions main_position' } },
