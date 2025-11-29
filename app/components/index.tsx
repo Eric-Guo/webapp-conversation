@@ -37,7 +37,7 @@ const Main: FC<IMainProps> = () => {
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
-  const userLabel = session?.user?.email || session?.user?.name || ''
+  const userLabel = session?.user?.name || session?.user?.email || ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
   const handleSignOut = () => signOut({ callbackUrl: '/' })
@@ -671,7 +671,7 @@ const Main: FC<IMainProps> = () => {
           </div>
           <div className='space-y-1'>
             <div className='text-xl font-semibold text-gray-900'>{APP_INFO.title || 'Chat APP'}</div>
-            <p className='text-sm text-gray-600'>Sign in with your company SSO to start a conversation.</p>
+            <p className='text-sm text-gray-600'>{APP_INFO.description}</p>
           </div>
           {!hasSetAppConfig && (
             <p className='text-xs text-left text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2'>
