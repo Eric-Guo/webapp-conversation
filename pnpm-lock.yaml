@@ -89,6 +89,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      katex:
+        specifier: ^0.16.25
+        version: 0.16.25
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -192,6 +195,9 @@ importers:
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
+      shiki:
+        specifier: ^3.17.0
+        version: 3.17.0
       tailwindcss:
         specifier: ^3.4.18
         version: 3.4.18(yaml@2.8.1)
