@@ -54,7 +54,7 @@
     "sass": "^1.94.2",
     "scheduler": "^0.23.2",
     "server-only": "^0.0.1",
-    "swr": "^2.3.6",
+    "swr": "^2.3.7",
     "tailwind-merge": "^3.4.0",
     "use-context-selector": "^2.0.0",
     "uuid": "^10.0.0",
