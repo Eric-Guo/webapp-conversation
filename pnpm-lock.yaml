@@ -27,8 +27,8 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/react@18.3.27)(react@19.1.1)
       '@mixtint/streamdown':
-        specifier: 1.6.11
-        version: 1.6.11(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.1)(unified@11.0.5)
+        specifier: 1.6.12
+        version: 1.6.12(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.1)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.53.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -683,8 +683,8 @@ packages:
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
 
-  '@mixtint/streamdown@1.6.11':
-    resolution: {integrity: sha512-V9/eUysRlqO4LtaZvLqXHOAzCFNEyUm41b4UDJaDBxe2VlXKcL3q7EMnkmbeNeK6amgDaGpq8KKYH8QRbSFf5A==}
+  '@mixtint/streamdown@1.6.12':
+    resolution: {integrity: sha512-oCoKrcWnA7vvsDm1jEG5z1krEVaFunp0ZxHW6cXJyRe0i3fbQvqYqSvOmxPEsbp5HkGB+D9UTSthF6O4JrpvTQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
@@ -4961,7 +4961,7 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@mixtint/streamdown@1.6.11(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.1)(unified@11.0.5)':
+  '@mixtint/streamdown@1.6.12(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.1)':
     dependencies:
       clsx: 2.1.1
       echarts: 5.6.0
@@ -4984,13 +4984,13 @@ snapshots:
       remark-rehype: 11.1.2
       shiki: 3.17.0
       tailwind-merge: 3.4.0
+      unified: 11.0.5
       unist-util-visit: 5.0.0
     transitivePeerDependencies:
       - '@types/mdast'
       - micromark
       - micromark-util-types
       - supports-color
-      - unified
 
   '@monaco-editor/loader@1.7.0':
     dependencies:
