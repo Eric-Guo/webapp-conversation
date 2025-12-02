@@ -3,6 +3,7 @@ module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
+    './node_modules/@mixtint/streamdown/dist/**/*.{js,cjs}',
   ],
   theme: {
     typography: require('./typography'),
