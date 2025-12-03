@@ -1,0 +1,15 @@
+[Unit]
+Description=NextJS Server for sql-chat
+After=syslog.target network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/sql_chat/current
+ExecStart=pnpm run start -- -p 4001
+ExecStop=/bin/kill -TERM $MAINPID
+User=sql_chat
+RestartSec=9
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
