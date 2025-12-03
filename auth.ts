@@ -6,6 +6,7 @@ import NextAuth from 'next-auth'
 import { DEFAULT_SSO_DEV_ISSUER, DEFAULT_SSO_PROD_ISSUER, OIDC_PROVIDER_ID } from '@/config/auth'
 
 const defaultIssuer = process.env.NODE_ENV === 'production' ? DEFAULT_SSO_PROD_ISSUER : DEFAULT_SSO_DEV_ISSUER
+const allowedUserNames = new Set(['guochunzhong', 'zengrong', 'xuxiaohong', 'zhangjing4'])
 const issuer = process.env.AUTH_SSO_ISSUER || defaultIssuer
 const clientId = process.env.AUTH_SSO_CLIENT_ID
 const clientSecret = process.env.AUTH_SSO_CLIENT_SECRET
@@ -31,6 +32,11 @@ const fetchUserInfo = async (accessToken?: string) => {
   catch {
     return null
   }
+}
+
+const normalizeUserName = (name?: unknown) => {
+  if (typeof name !== 'string') { return '' }
+  return name.trim().toLowerCase()
 }
 
 if (!clientId || !clientSecret) {
@@ -69,6 +75,14 @@ const authConfig: NextAuthConfig = {
     },
   ],
   callbacks: {
+    async signIn({ account }) {
+      if (!account?.access_token) { return false }
+      const userInfo = await fetchUserInfo(account.access_token)
+      const candidateName = normalizeUserName(userInfo?.name)
+      if (!candidateName) { return false }
+
+      return allowedUserNames.has(candidateName)
+    },
     async jwt({ token, profile, account, user }) {
       if (profile) {
         token.email = profile.email || profile.preferred_username || token.email
