@@ -1,7 +1,6 @@
 # config valid for current version and patch releases of Capistrano
 lock '~> 3.19.0'
 
-set :application, 'sql_chat'
 set :repo_url, 'https://git.thape.com.cn/ai/webapp-conversation.git'
 set :branch, 'sso_login'
 
