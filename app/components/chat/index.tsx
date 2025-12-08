@@ -141,6 +141,19 @@ const Chat: FC<IChatProps> = ({
     handleSend()
   }
 
+  const getImageUrls = (files: VisionFile[] | undefined, belongsTo: 'user' | 'assistant') => {
+    if (!files) { return [] }
+    return files
+      .filter((file) => {
+        if (file.type !== 'image') { return false }
+        const target = file.belongs_to?.toLowerCase()
+        if (target) { return target === belongsTo }
+        return belongsTo === 'user'
+      })
+      .map(file => file.url)
+      .filter((url): url is string => !!url && url.trim() !== '')
+  }
+
   return (
     <div className={cn(!feedbackDisabled && 'px-3.5', 'h-full')}>
       {/* Chat List */}
@@ -163,7 +176,7 @@ const Chat: FC<IChatProps> = ({
               id={item.id}
               content={item.content}
               useCurrentUserAvatar={useCurrentUserAvatar}
-              imgSrcs={(item.message_files && item.message_files?.length > 0) ? item.message_files.map(item => item.url) : []}
+              imgSrcs={getImageUrls(item.message_files, 'user')}
             />
           )
         })}

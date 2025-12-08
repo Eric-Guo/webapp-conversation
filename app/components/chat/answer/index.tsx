@@ -151,6 +151,8 @@ const Answer: FC<IAnswerProps> = ({
     return list.filter(file => file.type === 'image' && file.belongs_to === 'assistant')
   }
 
+  const messageImages = getImgs(item.message_files)
+
   const agentModeAnswer = (
     <div>
       {agent_thoughts?.map((item, index) => (
@@ -204,6 +206,11 @@ const Answer: FC<IAnswerProps> = ({
                   : (
                     <StreamdownMarkdown content={content} />
                   ))}
+              {!isAgentMode && messageImages.length > 0 && (
+                <div className="mt-3">
+                  <ImageGallery srcs={messageImages.map(item => item.url)} />
+                </div>
+              )}
               {suggestedQuestions.length > 0 && (
                 <div className="mt-3">
                   <div className="flex gap-1 mt-1 flex-wrap">

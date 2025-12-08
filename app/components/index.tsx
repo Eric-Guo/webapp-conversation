@@ -140,20 +140,21 @@ const Main: FC<IMainProps> = () => {
         const newChatList: ChatItem[] = generateNewChatListWithOpenStatement(notSyncToStateIntroduction, notSyncToStateInputs)
 
         data.forEach((item: any) => {
+          const messageFiles = item.message_files ? [...item.message_files] : []
           newChatList.push({
             id: `question-${item.id}`,
             content: item.query,
             isAnswer: false,
-            message_files: item.message_files?.filter((file: any) => file.belongs_to === 'user') || [],
+            message_files: messageFiles,
 
           })
           newChatList.push({
             id: item.id,
             content: item.answer,
-            agent_thoughts: addFileInfos(item.agent_thoughts ? sortAgentSorts(item.agent_thoughts) : item.agent_thoughts, item.message_files),
+            agent_thoughts: addFileInfos(item.agent_thoughts ? sortAgentSorts(item.agent_thoughts) : item.agent_thoughts, messageFiles),
             feedback: item.feedback,
             isAnswer: true,
-            message_files: item.message_files?.filter((file: any) => file.belongs_to === 'assistant') || [],
+            message_files: messageFiles,
           })
         })
         setChatList(newChatList)
@@ -489,6 +490,7 @@ const Main: FC<IMainProps> = () => {
         setRespondingFalse()
       },
       onFile(file) {
+        responseItem.message_files = [...(responseItem.message_files || []), { ...file }]
         const lastThought = responseItem.agent_thoughts?.[responseItem.agent_thoughts?.length - 1]
         if (lastThought) { lastThought.message_files = [...(lastThought as any).message_files, { ...file }] }
 
