@@ -1,6 +1,8 @@
 import {
   useCallback,
+  useEffect,
 } from 'react'
+import type { ClipboardEvent } from 'react'
 import {
   RiLink,
   RiUploadCloud2Line,
@@ -26,15 +28,18 @@ interface Option {
 }
 interface FileUploaderInAttachmentProps {
   fileConfig: FileUpload
+  onHandleClipboardPasteFile?: (handle: (e: ClipboardEvent<HTMLTextAreaElement>) => void) => void
 }
 const FileUploaderInAttachment = ({
   fileConfig,
+  onHandleClipboardPasteFile,
 }: FileUploaderInAttachmentProps) => {
   const { t } = useTranslation()
   const files = useStore(s => s.files)
   const {
     handleRemoveFile,
     handleReUploadFile,
+    handleClipboardPasteFile,
   } = useFile(fileConfig)
   const options = [
     {
@@ -48,6 +53,10 @@ const FileUploaderInAttachment = ({
       icon: <RiLink className='h-4 w-4' />,
     },
   ]
+
+  useEffect(() => {
+    onHandleClipboardPasteFile?.(handleClipboardPasteFile)
+  }, [handleClipboardPasteFile, onHandleClipboardPasteFile])
 
   const renderButton = useCallback((option: Option, open?: boolean) => {
     return (
@@ -112,18 +121,23 @@ interface FileUploaderInAttachmentWrapperProps {
   value?: FileEntity[]
   onChange: (files: FileEntity[]) => void
   fileConfig: FileUpload
+  onHandleClipboardPasteFile?: (handle: (e: ClipboardEvent<HTMLTextAreaElement>) => void) => void
 }
 const FileUploaderInAttachmentWrapper = ({
   value,
   onChange,
   fileConfig,
+  onHandleClipboardPasteFile,
 }: FileUploaderInAttachmentWrapperProps) => {
   return (
     <FileContextProvider
       value={value}
       onChange={onChange}
     >
-      <FileUploaderInAttachment fileConfig={fileConfig} />
+      <FileUploaderInAttachment
+        fileConfig={fileConfig}
+        onHandleClipboardPasteFile={onHandleClipboardPasteFile}
+      />
     </FileContextProvider>
   )
 }

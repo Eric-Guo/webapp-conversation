@@ -309,9 +309,21 @@ export const useFile = (fileConfig: FileUpload) => {
     const text = e.clipboardData?.getData('text/plain')
     if (file && !text) {
       e.preventDefault()
+      const allowedFileTypes = fileConfig.allowed_file_types || []
+      const fileType = getSupportFileType(file.name, file.type, allowedFileTypes?.includes(SupportUploadFileTypes.custom))
+      const isFileTypeAllowed = allowedFileTypes.includes(fileType)
+
+      if (!isFileTypeAllowed || !fileConfig.enabled) {
+        notify({
+          type: 'error',
+          message: t('common.fileUploader.fileExtensionNotSupport'),
+        })
+        return
+      }
+
       handleLocalFileUpload(file)
     }
-  }, [handleLocalFileUpload])
+  }, [fileConfig, handleLocalFileUpload, notify, t])
 
   const [isDragActive, setIsDragActive] = useState(false)
   const handleDragFileEnter = useCallback((e: React.DragEvent<HTMLElement>) => {

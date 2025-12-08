@@ -58,6 +58,7 @@ const Chat: FC<IChatProps> = ({
 
   const [query, setQuery] = React.useState('')
   const queryRef = useRef('')
+  const [handleAttachmentPaste, setHandleAttachmentPaste] = React.useState<((e: React.ClipboardEvent<HTMLTextAreaElement>) => void) | undefined>()
 
   const handleContentChange = (e: any) => {
     const value = e.target.value
@@ -95,6 +96,9 @@ const Chat: FC<IChatProps> = ({
   } = useImageFiles()
 
   const [attachmentFiles, setAttachmentFiles] = React.useState<FileEntity[]>([])
+  const handleClipboardPasteReady = (handler: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void) => {
+    setHandleAttachmentPaste(() => handler)
+  }
 
   const handleSend = () => {
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
@@ -215,6 +219,7 @@ const Chat: FC<IChatProps> = ({
                       fileConfig={fileConfig}
                       value={attachmentFiles}
                       onChange={setAttachmentFiles}
+                      onHandleClipboardPasteFile={handleClipboardPasteReady}
                     />
                   </div>
                 )
@@ -228,6 +233,7 @@ const Chat: FC<IChatProps> = ({
                 onChange={handleContentChange}
                 onKeyUp={handleKeyUp}
                 onKeyDown={handleKeyDown}
+                onPaste={fileConfig?.enabled ? handleAttachmentPaste : undefined}
                 autoSize
               />
               <div className="absolute bottom-2 right-6 flex items-center h-8">
