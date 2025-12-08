@@ -2,8 +2,9 @@ import {
   useCallback,
   useEffect,
 } from 'react'
-import type { ClipboardEvent } from 'react'
+import type { ClipboardEvent, ReactNode } from 'react'
 import {
+  RiAttachmentLine,
   RiLink,
   RiUploadCloud2Line,
 } from '@remixicon/react'
@@ -29,10 +30,18 @@ interface Option {
 interface FileUploaderInAttachmentProps {
   fileConfig: FileUpload
   onHandleClipboardPasteFile?: (handle: (e: ClipboardEvent<HTMLTextAreaElement>) => void) => void
+  variant?: 'default' | 'compact'
+  trigger?: (open: boolean) => ReactNode
+  listClassName?: string
+  showList?: boolean
 }
 const FileUploaderInAttachment = ({
   fileConfig,
   onHandleClipboardPasteFile,
+  variant = 'default',
+  trigger,
+  listClassName,
+  showList = true,
 }: FileUploaderInAttachmentProps) => {
   const { t } = useTranslation()
   const files = useStore(s => s.files)
@@ -94,6 +103,61 @@ const FileUploaderInAttachment = ({
     }
   }, [renderButton, renderTrigger, fileConfig])
 
+  const renderCompactTrigger = useCallback((open: boolean) => {
+    const disabled = !!(fileConfig.number_limits && files.length >= fileConfig.number_limits)
+    if (trigger) { return trigger(open) }
+
+    return (
+      <button
+        type='button'
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 text-gray-500',
+          disabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'bg-white hover:bg-gray-100',
+          open && 'bg-gray-100 text-gray-600',
+        )}
+        disabled={disabled}
+      >
+        <RiAttachmentLine className='h-5 w-5' />
+      </button>
+    )
+  }, [fileConfig.number_limits, files.length, trigger])
+
+  if (variant === 'compact') {
+    return (
+      <div className='relative flex items-center'>
+        {
+          (fileConfig.allowed_file_upload_methods?.includes(TransferMethod.local_file)
+            || fileConfig.allowed_file_upload_methods?.includes(TransferMethod.remote_url)) && (
+            <FileFromLinkOrLocal
+              showFromLocal={fileConfig.allowed_file_upload_methods?.includes(TransferMethod.local_file)}
+              showFromLink={fileConfig.allowed_file_upload_methods?.includes(TransferMethod.remote_url)}
+              trigger={renderCompactTrigger}
+              fileConfig={fileConfig}
+            />
+          )
+        }
+        {
+          showList && files.length > 0 && (
+            <div className={cn('mt-2 space-y-1', listClassName)}>
+              {
+                files.map(file => (
+                  <FileItem
+                    key={file.id}
+                    file={file}
+                    showDeleteAction
+                    showDownloadAction={false}
+                    onRemove={() => handleRemoveFile(file.id)}
+                    onReUpload={() => handleReUploadFile(file.id)}
+                  />
+                ))
+              }
+            </div>
+          )
+        }
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className='flex items-center space-x-1'>
@@ -122,12 +186,20 @@ interface FileUploaderInAttachmentWrapperProps {
   onChange: (files: FileEntity[]) => void
   fileConfig: FileUpload
   onHandleClipboardPasteFile?: (handle: (e: ClipboardEvent<HTMLTextAreaElement>) => void) => void
+  variant?: 'default' | 'compact'
+  trigger?: (open: boolean) => React.ReactNode
+  listClassName?: string
+  showList?: boolean
 }
 const FileUploaderInAttachmentWrapper = ({
   value,
   onChange,
   fileConfig,
   onHandleClipboardPasteFile,
+  variant,
+  trigger,
+  listClassName,
+  showList,
 }: FileUploaderInAttachmentWrapperProps) => {
   return (
     <FileContextProvider
@@ -137,6 +209,10 @@ const FileUploaderInAttachmentWrapper = ({
       <FileUploaderInAttachment
         fileConfig={fileConfig}
         onHandleClipboardPasteFile={onHandleClipboardPasteFile}
+        variant={variant}
+        trigger={trigger}
+        listClassName={listClassName}
+        showList={showList}
       />
     </FileContextProvider>
   )
