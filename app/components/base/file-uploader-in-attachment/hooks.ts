@@ -26,10 +26,7 @@ import { SupportUploadFileTypes } from './types'
 import { useToastContext } from '@/app/components/base/toast'
 import { TransferMethod } from '@/types/app'
 import { formatFileSize } from '@/utils/format'
-
-const uploadRemoteFileInfo = () => {
-  console.log('TODO')
-}
+import { uploadRemoteFileInfo } from '@/service/common'
 
 export const useFileSizeLimit = (fileUploadConfig?: FileUploadConfigResponse) => {
   const imgSizeLimit = Number(fileUploadConfig?.image_file_size_limit) * 1024 * 1024 || IMG_SIZE_LIMIT
@@ -188,7 +185,7 @@ export const useFile = (fileConfig: FileUpload) => {
           notify({ type: 'error', message: t('common.fileUploader.uploadFromComputerUploadError') })
           handleUpdateFile({ ...uploadingFile, progress: -1 })
         },
-      })
+      }, !!params.token)
     }
   }, [fileStore, notify, t, handleUpdateFile])
 
@@ -290,7 +287,7 @@ export const useFile = (fileConfig: FileUpload) => {
             notify({ type: 'error', message: t('common.fileUploader.uploadFromComputerUploadError') })
             handleUpdateFile({ ...uploadingFile, progress: -1 })
           },
-        })
+        }, !!params.token)
       },
       false,
     )

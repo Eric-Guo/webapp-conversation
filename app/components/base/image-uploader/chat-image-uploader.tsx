@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Uploader from './uploader'
 import ImageLinkInput from './image-link-input'
-import ImagePlus from '@/app/components/base/icons/line/image-plus'
 import { TransferMethod } from '@/types/app'
 import {
   PortalToFollowElem,
@@ -11,7 +10,27 @@ import {
   PortalToFollowElemTrigger,
 } from '@/app/components/base/portal-to-follow-elem'
 import Upload03 from '@/app/components/base/icons/line/upload-03'
+import FolderUpload from '@/app/components/base/icons/other/folder-upload'
 import type { ImageFile, VisionSettings } from '@/types/app'
+
+interface UploadTriggerProps {
+  hovering?: boolean
+  disabled?: boolean
+}
+const UploadTrigger: FC<UploadTriggerProps> = ({
+  hovering,
+  disabled,
+}) => {
+  return (
+    <div className={`
+      relative flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200
+      ${disabled ? 'cursor-not-allowed bg-gray-50 text-gray-300' : 'cursor-pointer hover:bg-gray-50'}
+      ${hovering ? 'bg-gray-100' : ''}
+    `}>
+      <FolderUpload className={`h-4 w-4 ${disabled ? 'text-gray-300' : 'text-gray-500'}`} />
+    </div>
+  )
+}
 
 interface UploadOnlyFromLocalProps {
   onUpload: (imageFile: ImageFile) => void
@@ -27,12 +46,7 @@ const UploadOnlyFromLocal: FC<UploadOnlyFromLocalProps> = ({
     <Uploader onUpload={onUpload} disabled={disabled} limit={limit}>
       {
         hovering => (
-          <div className={`
-            relative flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer
-            ${hovering && 'bg-gray-100'}
-          `}>
-            <ImagePlus className='w-4 h-4 text-gray-500' />
-          </div>
+          <UploadTrigger hovering={hovering} disabled={disabled} />
         )
       }
     </Uploader>
@@ -74,12 +88,7 @@ const UploaderButton: FC<UploaderButtonProps> = ({
       placement='top-start'
     >
       <PortalToFollowElemTrigger onClick={handleToggle}>
-        <div className={`
-          relative flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-lg
-          ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-        `}>
-          <ImagePlus className='w-4 h-4 text-gray-500' />
-        </div>
+        <UploadTrigger disabled={disabled} />
       </PortalToFollowElemTrigger>
       <PortalToFollowElemContent className='z-50'>
         <div className='p-2 w-[260px] bg-white rounded-lg border-[0.5px] border-gray-200 shadow-lg'>

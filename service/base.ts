@@ -119,6 +119,7 @@ interface IOtherOptions {
   bodyStringify?: boolean
   needAllResponseContent?: boolean
   deleteContentType?: boolean
+  silent?: boolean
   onData?: IOnData // for stream
   onThought?: IOnThought
   onFile?: IOnFile
@@ -246,7 +247,7 @@ const handleStream = (
   read()
 }
 
-const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: IOtherOptions) => {
+const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent, silent }: IOtherOptions) => {
   const options = Object.assign({}, baseOptions, fetchOptions)
 
   const urlPrefix = API_PREFIX
@@ -286,20 +287,20 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
               const bodyJson = res.json()
               switch (res.status) {
                 case 401: {
-                  Toast.notify({ type: 'error', message: 'Invalid token' })
+                  if (!silent) { Toast.notify({ type: 'error', message: 'Invalid token' }) }
                   return
                 }
                 default:
                   // eslint-disable-next-line no-new
                   new Promise(() => {
                     bodyJson.then((data: any) => {
-                      Toast.notify({ type: 'error', message: data.message })
+                      if (!silent) { Toast.notify({ type: 'error', message: data.message }) }
                     })
                   })
               }
             }
             catch (e) {
-              Toast.notify({ type: 'error', message: `${e}` })
+              if (!silent) { Toast.notify({ type: 'error', message: `${e}` }) }
             }
 
             return Promise.reject(resClone)
@@ -317,7 +318,7 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent }: I
           resolve(needAllResponseContent ? resClone : data)
         })
         .catch((err) => {
-          Toast.notify({ type: 'error', message: err })
+          if (!silent) { Toast.notify({ type: 'error', message: err }) }
           reject(err)
         })
     }),
