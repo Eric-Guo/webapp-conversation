@@ -81,7 +81,7 @@ const authConfig: NextAuthConfig = {
       const candidateName = normalizeUserName(userInfo?.name)
       if (!candidateName) { return false }
 
-      return allowedUserNames.has(candidateName)
+      return allowedUserNames.has(candidateName) || process.env.NEXT_PUBLIC_TITLE === 'Nano Banana 生图助手'
     },
     async jwt({ token, profile, account, user }) {
       if (profile) {
