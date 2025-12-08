@@ -3,7 +3,7 @@ export const APP_ID = `${process.env.NEXT_PUBLIC_APP_ID}`
 export const API_KEY = `${process.env.NEXT_PUBLIC_APP_KEY}`
 export const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`
 export const APP_INFO: AppInfo = {
-  title: '营业目标表智能问答助手',
+  title: `${process.env.NEXT_PUBLIC_TITLE}`,
   description: '需要登录方可使用，预览版。',
   copyright: '',
   privacy_policy: '',
