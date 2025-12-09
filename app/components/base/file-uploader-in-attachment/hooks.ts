@@ -228,6 +228,7 @@ export const useFile = (fileConfig: FileUpload) => {
       if (!isAllowedFileExtension(res.name, res.mime_type, fileConfig.allowed_file_types || [], fileConfig.allowed_file_extensions || [])) {
         notify({ type: 'error', message: t('common.fileUploader.fileExtensionNotSupport') })
         handleRemoveFile(uploadingFile.id)
+        return
       }
       if (!checkSizeLimit(newFile.supportFileType, newFile.size)) { handleRemoveFile(uploadingFile.id) }
       else { handleUpdateFile(newFile) }
