@@ -78,7 +78,7 @@ const FileFromLinkOrLocal = ({
                     disabled={disabled}
                   />
                   <Button
-                    className='shrink-0'
+                    className='shrink-0 !h-7 !px-3 !py-0 text-xs font-medium leading-[18px]'
                     // size='small'
                     // variant='primary'
                     type='primary'
