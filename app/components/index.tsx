@@ -38,6 +38,7 @@ const Main: FC<IMainProps> = () => {
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
   const userLabel = session?.user?.name || session?.user?.email || ''
+  const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
   const handleSignOut = () => signOut({ callbackUrl: '/' })
@@ -243,7 +244,7 @@ const Main: FC<IMainProps> = () => {
     }
     (async () => {
       try {
-        const [conversationData, appParams] = await Promise.all([fetchConversations(), fetchAppParams()])
+        const [conversationData, appParams] = await Promise.all([fetchConversations(userPrefix), fetchAppParams()])
         // handle current conversation id
         const { data: conversations, error } = conversationData as { data: ConversationItem[], error: string }
         if (error) {
@@ -305,7 +306,7 @@ const Main: FC<IMainProps> = () => {
         }
       }
     })()
-  }, [hasSetAppConfig, isAuthenticated])
+  }, [hasSetAppConfig, isAuthenticated, userPrefix])
 
   const [isResponding, { setTrue: setRespondingTrue, setFalse: setRespondingFalse }] = useBoolean(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
@@ -475,7 +476,7 @@ const Main: FC<IMainProps> = () => {
         if (hasError) { return }
 
         if (getConversationIdChangeBecauseOfNew()) {
-          const { data: allConversations }: any = await fetchConversations()
+          const { data: allConversations }: any = await fetchConversations(userPrefix)
           const newItem: any = await generationConversationName(allConversations[0].id)
 
           const newAllConversations = produce(allConversations, (draft: any) => {

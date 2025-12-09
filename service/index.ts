@@ -40,8 +40,10 @@ export const sendChatMessage = async (
   }, { onData, onCompleted, onThought, onFile, onError, getAbortController, onMessageEnd, onMessageReplace, onNodeStarted, onWorkflowStarted, onWorkflowFinished, onNodeFinished })
 }
 
-export const fetchConversations = async () => {
-  return get('conversations', { params: { limit: 100, first_id: '' } })
+export const fetchConversations = async (userPrefix?: string) => {
+  const params: Record<string, any> = { limit: 100, first_id: '' }
+  if (userPrefix) { params.user = userPrefix }
+  return get('conversations', { params })
 }
 
 export const fetchChatList = async (conversationId: string) => {
