@@ -4,7 +4,7 @@ export const API_KEY = `${process.env.NEXT_PUBLIC_APP_KEY}`
 export const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`
 export const APP_INFO: AppInfo = {
   title: `${process.env.NEXT_PUBLIC_TITLE}`,
-  description: '需要登录方可使用，预览版。',
+  description: `${process.env.NEXT_PUBLIC_DESCRIPTION}`,
   copyright: '',
   privacy_policy: '',
   default_language: 'zh-Hans',
