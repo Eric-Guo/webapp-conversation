@@ -27,8 +27,8 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/react@18.3.27)(react@19.1.2)
       '@mixtint/streamdown':
-        specifier: 1.6.22
-        version: 1.6.22(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.2)
+        specifier: 1.6.23
+        version: 1.6.23(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.2)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.53.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
@@ -689,11 +689,11 @@ packages:
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
 
-  '@mixtint/remend@1.0.2':
-    resolution: {integrity: sha512-F83mbK4LWxfsdWSUiCgexA8kwCxSuZSzufLzEGROsA5rH3hLw9wAdPjhJsjwDoHN3hbS6VPeEmaBPLAORRI2iQ==}
+  '@mixtint/remend@1.0.3':
+    resolution: {integrity: sha512-5m3t7AGIdag6Q7Cy4Qs+9ckjg5M/6PqvZA43n7YhZGDrFNx3D4Br+UTu3278nHrMOkwVes7hcX2TKnkvQuAniA==}
 
-  '@mixtint/streamdown@1.6.22':
-    resolution: {integrity: sha512-vX/5Nkn18nP0ErnLyq5I961jLKvjAcuveCFSDwudnhxtK3hxXb7nMFVTZjkZtenUq4FVuCYgopNqiPSJ3xQDpQ==}
+  '@mixtint/streamdown@1.6.23':
+    resolution: {integrity: sha512-OYqnfDWBPLldRMiGIAM6xndUpgp0npP8tgkiaY82Lt6uRVxMpne2NszNN79nRPkxO1D+OXJ/6Q1s+jYTTsfGxA==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
@@ -3760,8 +3760,8 @@ packages:
   regex-utilities@2.3.0:
     resolution: {integrity: sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng==}
 
-  regex@6.0.1:
-    resolution: {integrity: sha512-uorlqlzAKjKQZ5P+kTJr3eeJGSVroLKoHmquUj4zHWuR+hEyNqlXsSKlYYF5F4NI6nl7tWCs0apKJ0lmfsXAPA==}
+  regex@6.1.0:
+    resolution: {integrity: sha512-6VwtthbV4o/7+OaAF9I5L5V3llLEsoPyq9P1JVXkedTP33c7MfCG0/5NOPcSJn0TzXcG9YUrR0gQSWioew3LDg==}
 
   regexp-ast-analysis@0.7.1:
     resolution: {integrity: sha512-sZuz1dYW/ZsfG17WSAG7eS85r5a0dDsvg+7BiiYR5o6lKCAtUrEwdmRmaGF6rwVj3LcmAeYkOWKEPlbPzN3Y3A==}
@@ -4970,11 +4970,11 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@mixtint/remend@1.0.2': {}
+  '@mixtint/remend@1.0.3': {}
 
-  '@mixtint/streamdown@1.6.22(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.2)':
+  '@mixtint/streamdown@1.6.23(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.1.2)':
     dependencies:
-      '@mixtint/remend': 1.0.2
+      '@mixtint/remend': 1.0.3
       clsx: 2.1.1
       echarts: 5.6.0
       hast: 1.0.0
@@ -8438,7 +8438,7 @@ snapshots:
   oniguruma-to-es@4.3.4:
     dependencies:
       oniguruma-parser: 0.12.1
-      regex: 6.0.1
+      regex: 6.1.0
       regex-recursion: 6.0.2
 
   optionator@0.9.4:
@@ -8758,7 +8758,7 @@ snapshots:
 
   regex-utilities@2.3.0: {}
 
-  regex@6.0.1:
+  regex@6.1.0:
     dependencies:
       regex-utilities: 2.3.0
 
