@@ -8,7 +8,7 @@ export const getInfo = async (request: NextRequest) => {
   const session = await auth()
   const userPrefix = `user_${APP_ID}_${session?.user?.name}:`
   const sessionId = request.cookies.get('session_id')?.value || v4()
-  const user = userPrefix + sessionId
+  const user = userPrefix
   return {
     sessionId,
     user,
