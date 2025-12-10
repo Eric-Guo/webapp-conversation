@@ -3,8 +3,8 @@ export const APP_ID = `${process.env.NEXT_PUBLIC_APP_ID}`
 export const API_KEY = `${process.env.NEXT_PUBLIC_APP_KEY}`
 export const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`
 export const APP_INFO: AppInfo = {
-  title: `${process.env.NEXT_PUBLIC_TITLE}`,
-  description: `${process.env.NEXT_PUBLIC_DESCRIPTION}`,
+  title: process.env.NEXT_PUBLIC_TITLE || 'Chat APP',
+  description: process.env.NEXT_PUBLIC_DESCRIPTION || '',
   copyright: '',
   privacy_policy: '',
   default_language: 'zh-Hans',
