@@ -1,6 +1,6 @@
 'use client'
 import type { FC } from 'react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import produce, { setAutoFreeze } from 'immer'
 import { useBoolean, useGetState } from 'ahooks'
@@ -25,6 +25,9 @@ import { API_KEY, APP_ID, APP_INFO, isShowPrompt, promptTemplate } from '@/confi
 import { OIDC_PROVIDER_ID } from '@/config/auth'
 import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
+import { isTimestampToday } from '@/utils/date'
+
+const MAX_CONVERSATION_LIMIT_TODAY = 42
 
 export interface IMainProps {
   params: any
@@ -91,11 +94,16 @@ const Main: FC<IMainProps> = () => {
     setNewConversationInfo,
     setExistConversationInfo,
   } = useConversation()
-
+  const todayConversationCount = useMemo(
+    () => conversationList.filter(item => isTimestampToday(item.created_at)).length,
+    [conversationList],
+  )
+  const hasReachedConversationLimit = todayConversationCount >= MAX_CONVERSATION_LIMIT_TODAY
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew, getConversationIdChangeBecauseOfNew] = useGetState(false)
   const [isChatStarted, { setTrue: setChatStarted, setFalse: setChatNotStarted }] = useBoolean(false)
   const handleStartChat = (inputs: Record<string, any>) => {
-    createNewChat()
+    const hasCreated = createNewChat()
+    if (!hasCreated) { return }
     setConversationIdChangeBecauseOfNew(true)
     setCurrInputs(inputs)
     setChatStarted()
@@ -171,7 +179,8 @@ const Main: FC<IMainProps> = () => {
 
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
-      createNewChat()
+      const hasCreated = createNewChat()
+      if (!hasCreated) { return }
       setConversationIdChangeBecauseOfNew(true)
     }
     else {
@@ -201,8 +210,16 @@ const Main: FC<IMainProps> = () => {
   // user can not edit inputs if user had send message
   const canEditInputs = !chatList.some(item => item.isAnswer === false) && isNewConversation
   const createNewChat = () => {
+    if (hasReachedConversationLimit) {
+      Toast.notify({
+        type: 'error',
+        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
+      })
+      return false
+    }
+
     // if new chat is already exist, do not create new chat
-    if (conversationList.some(item => item.id === '-1')) { return }
+    if (conversationList.some(item => item.id === '-1')) { return true }
 
     setConversationList(produce(conversationList, (draft) => {
       draft.unshift({
@@ -213,6 +230,7 @@ const Main: FC<IMainProps> = () => {
         suggested_questions: suggestedQuestions,
       })
     }))
+    return true
   }
 
   // sometime introduction is not applied to state
@@ -246,7 +264,7 @@ const Main: FC<IMainProps> = () => {
       try {
         const [conversationData, appParams] = await Promise.all([fetchConversations(userPrefix), fetchAppParams()])
         // handle current conversation id
-        const { data: conversations, error } = conversationData as { data: ConversationItem[], error: string }
+        const { data: conversations, error } = conversationData as { data: ConversationItem[], error?: string }
         if (error) {
           Toast.notify({ type: 'error', message: error })
           throw new Error(error)
@@ -476,7 +494,8 @@ const Main: FC<IMainProps> = () => {
         if (hasError) { return }
 
         if (getConversationIdChangeBecauseOfNew()) {
-          const { data: allConversations }: any = await fetchConversations(userPrefix)
+          const conversationsResponse: any = await fetchConversations(userPrefix)
+          const { data: allConversations } = conversationsResponse
           const newItem: any = await generationConversationName(allConversations[0].id)
 
           const newAllConversations = produce(allConversations, (draft: any) => {
@@ -659,6 +678,7 @@ const Main: FC<IMainProps> = () => {
         onCurrentIdChange={handleConversationIdChange}
         currentId={currConversationId}
         copyRight={APP_INFO.copyright || APP_INFO.title}
+        conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
       />
     )
   }
@@ -704,6 +724,8 @@ const Main: FC<IMainProps> = () => {
         isMobile={isMobile}
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
+        todayConversationCount={todayConversationCount}
+        todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
@@ -729,6 +751,8 @@ const Main: FC<IMainProps> = () => {
             canEditInputs={canEditInputs}
             savedInputs={currInputs as Record<string, any>}
             onInputsChange={setCurrInputs}
+            todayConversationCount={todayConversationCount}
+            todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
           ></ConfigSence>
 
           {

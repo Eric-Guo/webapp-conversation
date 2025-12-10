@@ -24,6 +24,8 @@ export interface IWelcomeProps {
   canEditInputs: boolean
   savedInputs: Record<string, any>
   onInputsChange: (inputs: Record<string, any>) => void
+  todayConversationCount: number
+  todayConversationLimit: number
 }
 
 const Welcome: FC<IWelcomeProps> = ({
@@ -36,6 +38,8 @@ const Welcome: FC<IWelcomeProps> = ({
   canEditInputs,
   savedInputs,
   onInputsChange,
+  todayConversationCount,
+  todayConversationLimit,
 }) => {
   const { t } = useTranslation()
   const hasVar = promptConfig.prompt_variables.length > 0
@@ -195,7 +199,11 @@ const Welcome: FC<IWelcomeProps> = ({
     if (isPublicVersion) {
       return (
         <div>
-          <AppInfoComp siteInfo={siteInfo} />
+          <AppInfoComp
+            siteInfo={siteInfo}
+            todayConversationCount={todayConversationCount}
+            todayConversationLimit={todayConversationLimit}
+          />
           <TemplateVarPanel
             isFold={false}
             header={
@@ -218,7 +226,11 @@ const Welcome: FC<IWelcomeProps> = ({
       <TemplateVarPanel
         isFold={false}
         header={
-          <AppInfoComp siteInfo={siteInfo} />
+          <AppInfoComp
+            siteInfo={siteInfo}
+            todayConversationCount={todayConversationCount}
+            todayConversationLimit={todayConversationLimit}
+          />
         }
       >
         <ChatBtn onClick={handleChat} />
@@ -231,7 +243,11 @@ const Welcome: FC<IWelcomeProps> = ({
       <TemplateVarPanel
         isFold={false}
         header={
-          <AppInfoComp siteInfo={siteInfo} />
+          <AppInfoComp
+            siteInfo={siteInfo}
+            todayConversationCount={todayConversationCount}
+            todayConversationLimit={todayConversationLimit}
+          />
         }
       >
         {renderInputs()}

@@ -16,6 +16,7 @@ const translation = {
     configDisabled:
       '前回のセッション設定がこのセッションで使用されています。',
     startChat: '開始',
+    todayUsage: 'Today: {{count}} / {{limit}}',
     privacyPolicyLeft:
       'ご利用前に、',
     privacyPolicyMiddle:
@@ -27,6 +28,7 @@ const translation = {
     valueOfVarRequired: '変数の値は空にできません',
     waitForResponse:
       '前のメッセージの応答が完了するまでお待ちください。',
+    conversationLimitReached: '本日の会話上限 ({{limit}}) に達しました。',
   },
   variableTable: {
     optional: '任意',

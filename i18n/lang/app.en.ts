@@ -16,6 +16,7 @@ const translation = {
     configDisabled:
       'Previous session settings have been used for this session.',
     startChat: 'Start Chat',
+    todayUsage: 'Today: {{count}} / {{limit}}',
     privacyPolicyLeft:
       'Please read the ',
     privacyPolicyMiddle:
@@ -27,6 +28,7 @@ const translation = {
     valueOfVarRequired: 'Variables value can not be empty',
     waitForResponse:
       'Please wait for the response to the previous message to complete.',
+    conversationLimitReached: 'You have reached today\'s conversation limit ({{limit}}).',
   },
   variableTable: {
     optional: 'Optional',

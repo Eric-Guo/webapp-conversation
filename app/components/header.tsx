@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Bars3Icon,
   PencilSquareIcon,
@@ -13,6 +14,8 @@ export interface IHeaderProps {
   onCreateNewChat?: () => void
   userLabel?: string
   onSignOut?: () => void
+  todayConversationCount?: number
+  todayConversationLimit?: number
 }
 const Header: FC<IHeaderProps> = ({
   title,
@@ -21,7 +24,10 @@ const Header: FC<IHeaderProps> = ({
   onCreateNewChat,
   userLabel,
   onSignOut,
+  todayConversationCount = 0,
+  todayConversationLimit = 0,
 }) => {
+  const { t } = useTranslation()
   return (
     <div className="shrink-0 flex items-center justify-between h-12 px-3 bg-gray-100">
       {isMobile
@@ -39,6 +45,9 @@ const Header: FC<IHeaderProps> = ({
         <div className=" text-sm text-gray-800 font-bold">{title}</div>
       </div>
       <div className='flex items-center space-x-2'>
+        <div className="flex items-center h-8 px-2 text-[11px] text-gray-700 bg-white border border-gray-200 rounded-md whitespace-nowrap">
+          {t('app.chat.todayUsage', { count: todayConversationCount, limit: todayConversationLimit })}
+        </div>
         {isMobile && (
           <div className='flex items-center justify-center h-8 w-8 cursor-pointer' onClick={() => onCreateNewChat?.()} >
             <PencilSquareIcon className="h-4 w-4 text-gray-500" />

@@ -16,6 +16,7 @@ const translation = {
     configDisabled:
       'La configuración de la sesión anterior se ha utilizado para esta sesión.',
     startChat: 'Comenzar chat',
+    todayUsage: 'Today: {{count}} / {{limit}}',
     privacyPolicyLeft:
       'Por favor lea la ',
     privacyPolicyMiddle:
@@ -27,6 +28,7 @@ const translation = {
     valueOfVarRequired: 'El valor de las variables no puede estar vacío',
     waitForResponse:
       'Por favor espere a que la respuesta al mensaje anterior se complete.',
+    conversationLimitReached: 'Has alcanzado el límite de conversaciones de hoy ({{limit}}).',
   },
 }
 
