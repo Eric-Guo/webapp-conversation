@@ -36,6 +36,7 @@ export interface IChatProps {
   controlClearQuery?: number
   visionConfig?: VisionSettings
   fileConfig?: FileUpload
+  sendDisabled?: boolean
 }
 
 const Chat: FC<IChatProps> = ({
@@ -50,6 +51,7 @@ const Chat: FC<IChatProps> = ({
   controlClearQuery,
   visionConfig,
   fileConfig,
+  sendDisabled = false,
 }) => {
   const { t } = useTranslation()
   const { notify } = Toast
@@ -58,6 +60,7 @@ const Chat: FC<IChatProps> = ({
   const [query, setQuery] = React.useState('')
   const queryRef = useRef('')
   const [handleAttachmentPaste, setHandleAttachmentPaste] = React.useState<((e: React.ClipboardEvent<HTMLTextAreaElement>) => void) | undefined>()
+  const isSendButtonDisabled = !!isResponding || sendDisabled
 
   const handleContentChange = (e: any) => {
     const value = e.target.value
@@ -100,6 +103,7 @@ const Chat: FC<IChatProps> = ({
   }
 
   const handleSend = () => {
+    if (isSendButtonDisabled) { return }
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
     const imageFiles: VisionFile[] = files.filter(file => file.progress !== -1).map(fileItem => ({
       type: 'image',
@@ -139,6 +143,7 @@ const Chat: FC<IChatProps> = ({
   }
 
   const suggestionClick = (suggestion: string) => {
+    if (isSendButtonDisabled) { return }
     setQuery(suggestion)
     queryRef.current = suggestion
     handleSend()
@@ -244,9 +249,13 @@ const Chat: FC<IChatProps> = ({
                 }
                 <button
                   type='button'
-                  className='self-center flex h-10 w-10 items-center justify-center rounded-full bg-[#1a73e8] text-white shadow-md hover:bg-[#1669d0] active:bg-[#125cb8]'
+                  className={cn(
+                    'self-center flex h-10 w-10 items-center justify-center rounded-full',
+                    isSendButtonDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1a73e8] text-white shadow-md hover:bg-[#1669d0] active:bg-[#125cb8]',
+                  )}
                   onClick={handleSend}
                   aria-label={t('common.operation.send')}
+                  disabled={isSendButtonDisabled}
                 >
                   <RiSendPlaneFill className='h-5 w-5' />
                 </button>

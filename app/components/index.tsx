@@ -333,6 +333,16 @@ const Main: FC<IMainProps> = () => {
     notify({ type: 'error', message })
   }
 
+  // single-turn model: lock sending after one complete exchange
+  const hasConversationFinished = useMemo(() => {
+    const hasUserMessage = chatList.some(item => !item.isAnswer)
+    const hasAssistantMessage = chatList.some(item => item.isAnswer
+      && !item.isOpeningStatement
+      && !item.id?.startsWith('answer-placeholder')
+      && (!!item.content?.trim() || (item.agent_thoughts?.length ?? 0) > 0 || (item.message_files?.length ?? 0) > 0))
+    return hasUserMessage && hasAssistantMessage && !isResponding
+  }, [chatList, isResponding])
+
   const checkCanSend = () => {
     if (currConversationId !== '-1') { return true }
 
@@ -766,6 +776,7 @@ const Main: FC<IMainProps> = () => {
                   checkCanSend={checkCanSend}
                   visionConfig={visionConfig}
                   fileConfig={fileConfig}
+                  sendDisabled={hasConversationFinished}
                 />
               </div>)
           }
