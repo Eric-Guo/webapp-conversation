@@ -288,6 +288,7 @@ const baseFetch = (url: string, fetchOptions: any, { needAllResponseContent, sil
               switch (res.status) {
                 case 401: {
                   if (!silent) { Toast.notify({ type: 'error', message: 'Invalid token' }) }
+                  reject(resClone)
                   return
                 }
                 default:
