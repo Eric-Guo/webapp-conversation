@@ -28,7 +28,7 @@ const ImageLinkInput: FC<ImageLinkInputProps> = ({
   }
 
   return (
-    <div className='flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active p-1 shadow-xs'>
+    <div className='flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active shadow-xs'>
       <input
         className='system-sm-regular mr-0.5 block h-full grow appearance-none bg-transparent px-1 outline-none'
         value={imageLink}

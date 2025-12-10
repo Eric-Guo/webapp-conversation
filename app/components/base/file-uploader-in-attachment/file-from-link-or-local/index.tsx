@@ -64,7 +64,7 @@ const FileFromLinkOrLocal = ({
             showFromLink && (
               <>
                 <div className={cn(
-                  'flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active p-1 shadow-xs',
+                  'flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active shadow-xs',
                   showError && 'border-components-input-border-destructive',
                 )}>
                   <input
