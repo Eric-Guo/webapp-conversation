@@ -15,6 +15,7 @@ import {
   getSupportFileType,
   isAllowedFileExtension,
   getFileNameFromUrl,
+  getFileExtension,
 } from './utils'
 import {
   AUDIO_SIZE_LIMIT,
@@ -205,6 +206,7 @@ export const useFile = (fileConfig: FileUpload) => {
     const hasAllowList = allowedFileTypes.length > 0 || allowedFileExtensions.length > 0
     const fileName = getFileNameFromUrl(url) || url
     const mimeType = mime.getType(fileName) || ''
+    const extension = getFileExtension(fileName, mimeType)
     const supportFileType = getSupportFileType(
       fileName,
       mimeType,
@@ -224,7 +226,9 @@ export const useFile = (fileConfig: FileUpload) => {
     handleAddFile(uploadingFile)
     startProgressTimer(uploadingFile.id)
 
-    if (hasAllowList && !isAllowedFileExtension(fileName, mimeType, allowedFileTypes, allowedFileExtensions)) {
+    const blockedByAllowList = hasAllowList && !isAllowedFileExtension(fileName, mimeType, allowedFileTypes, allowedFileExtensions)
+    const allowRemoteWithoutExt = uploadingFile.transferMethod === TransferMethod.remote_url && !extension
+    if (blockedByAllowList && !allowRemoteWithoutExt) {
       notify({ type: 'error', message: t('common.uploader.fileExtensionNotSupport') })
       handleUpdateFile({ ...uploadingFile, progress: -1 })
       return
