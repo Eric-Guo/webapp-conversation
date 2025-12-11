@@ -15,7 +15,6 @@ import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader
 import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
 import { getProcessedFiles } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
-import FolderUpload from '@/app/components/base/icons/other/folder-upload'
 
 export interface IChatProps {
   chatList: ChatItem[]
@@ -60,6 +59,7 @@ const Chat: FC<IChatProps> = ({
   const queryRef = useRef('')
   const [handleAttachmentPaste, setHandleAttachmentPaste] = React.useState<((e: React.ClipboardEvent<HTMLTextAreaElement>) => void) | undefined>()
   const isSendButtonDisabled = !!isResponding || sendDisabled
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = React.useState(false)
 
   const handleContentChange = (e: any) => {
     const value = e.target.value
@@ -109,6 +109,14 @@ const Chat: FC<IChatProps> = ({
   const handleClipboardPasteReady = (handler: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void) => {
     setHandleAttachmentPaste(() => handler)
   }
+  const canUploadImages = !!(visionConfig?.enabled && imageFileConfig?.enabled)
+  const isImageUploadLimitReached = canUploadImages && !!(imageFileConfig?.number_limits && imageFiles.length >= imageFileConfig.number_limits)
+  const canUploadAttachments = !!fileConfig?.enabled
+  const isAttachmentLimitReached = canUploadAttachments && !!(fileConfig?.number_limits && attachmentFiles.length >= fileConfig.number_limits)
+  const isAttachmentButtonDisabled = (!canUploadImages || isImageUploadLimitReached) && (!canUploadAttachments || isAttachmentLimitReached)
+  useEffect(() => {
+    if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
+  }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
 
   const handleSend = () => {
     if (isSendButtonDisabled) { return }
@@ -117,6 +125,7 @@ const Chat: FC<IChatProps> = ({
     const docAndOtherFiles: VisionFile[] = getProcessedFiles(attachmentFiles)
     const combinedFiles: VisionFile[] = [...imageFilePayloads, ...docAndOtherFiles]
     onSend(queryRef.current, combinedFiles)
+    if (isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
     const hasPendingLocalImages = imageFiles.some(item => item.transferMethod === TransferMethod.local_file && !item.uploadedId)
     if (!hasPendingLocalImages) {
       if (imageFiles.length) { setImageFiles([]) }
@@ -198,40 +207,6 @@ const Chat: FC<IChatProps> = ({
           <div className='fixed z-10 bottom-0 left-1/2 transform -translate-x-1/2 pc:ml-[122px] tablet:ml-[96px] mobile:ml-0 pc:w-[794px] tablet:w-[794px] max-w-full mobile:w-full px-3.5 pb-4'>
             <div className='relative space-y-2'>
               <div className='flex items-start gap-3 rounded-[18px] border border-gray-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)]'>
-                {
-                  visionConfig?.enabled && imageFileConfig && (
-                    <div className='pt-1'>
-                      <FileUploaderInAttachmentWrapper
-                        fileConfig={imageFileConfig}
-                        value={imageFiles}
-                        onChange={setImageFiles}
-                        variant='compact'
-                        listDisplay='image'
-                        trigger={(open) => {
-                          const disabled = !!(imageFileConfig.number_limits && imageFiles.length >= imageFileConfig.number_limits)
-                          return (
-                            <button
-                              type='button'
-                              className={cn(
-                                'relative flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200',
-                                disabled ? 'cursor-not-allowed bg-gray-50 text-gray-300' : 'cursor-pointer bg-white hover:bg-gray-50 text-gray-500',
-                                open && !disabled && 'bg-gray-100',
-                              )}
-                              disabled={disabled}
-                            >
-                              <FolderUpload className={cn(
-                                'h-4 w-4',
-                                disabled ? 'text-gray-300' : 'text-gray-500',
-                              )}
-                              />
-                            </button>
-                          )
-                        }}
-                        listClassName='pl-1 pt-1'
-                      />
-                    </div>
-                  )
-                }
                 <div className='flex-1'>
                   <Textarea
                     className='block w-full resize-none border-none bg-transparent p-0 text-base leading-6 text-gray-700 outline-none'
@@ -245,32 +220,51 @@ const Chat: FC<IChatProps> = ({
                   />
                 </div>
                 {
-                  fileConfig?.enabled && (
+                  (canUploadImages || canUploadAttachments) && (
                     <div className='relative flex items-start'>
-                      <FileUploaderInAttachmentWrapper
-                        fileConfig={fileConfig}
-                        value={attachmentFiles}
-                        onChange={setAttachmentFiles}
-                        onHandleClipboardPasteFile={handleClipboardPasteReady}
-                        variant='compact'
-                        trigger={(open) => {
-                          const disabled = !!(fileConfig.number_limits && attachmentFiles.length >= fileConfig.number_limits)
-                          return (
-                            <button
-                              type='button'
-                              className={`
-                                flex h-10 w-10 items-center justify-center rounded-full
-                                ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'bg-white text-gray-500 hover:bg-gray-100'}
-                                ${open ? 'bg-gray-100 text-gray-600' : ''}
-                              `}
-                              disabled={disabled}
-                            >
-                              <RiAttachmentLine className='h-5 w-5' />
-                            </button>
-                          )
+                      <div
+                        className={cn(
+                          'absolute right-0 bottom-full mb-2 w-[360px] rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)] space-y-4',
+                          !isAttachmentMenuOpen && 'hidden',
+                        )}
+                      >
+                        {canUploadImages && imageFileConfig && (
+                          <FileUploaderInAttachmentWrapper
+                            fileConfig={imageFileConfig}
+                            value={imageFiles}
+                            onChange={setImageFiles}
+                            variant='default'
+                            listDisplay='image'
+                          />
+                        )}
+                        {canUploadImages && canUploadAttachments && (
+                          <div className='h-px bg-gray-100' />
+                        )}
+                        {canUploadAttachments && fileConfig && (
+                          <FileUploaderInAttachmentWrapper
+                            fileConfig={fileConfig}
+                            value={attachmentFiles}
+                            onChange={setAttachmentFiles}
+                            onHandleClipboardPasteFile={handleClipboardPasteReady}
+                            variant='default'
+                          />
+                        )}
+                      </div>
+                      <button
+                        type='button'
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-full',
+                          isAttachmentButtonDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'bg-white text-gray-500 hover:bg-gray-100',
+                          isAttachmentMenuOpen && !isAttachmentButtonDisabled && 'bg-gray-100 text-gray-600',
+                        )}
+                        disabled={isAttachmentButtonDisabled}
+                        onClick={() => {
+                          if (isAttachmentButtonDisabled) { return }
+                          setIsAttachmentMenuOpen(v => !v)
                         }}
-                        listClassName='absolute right-0 bottom-full mt-0 mb-2 w-[320px]'
-                      />
+                      >
+                        <RiAttachmentLine className='h-5 w-5' />
+                      </button>
                     </div>
                   )
                 }
