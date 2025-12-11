@@ -155,10 +155,15 @@ const Chat: FC<IChatProps> = ({
     if (canUploadAttachments) { return fileConfig }
     return imageFileConfig
   }, [canUploadAttachments, canUploadImages, fileConfig, imageFileConfig])
-  const hasUploadSlot = React.useMemo(() => {
-    if (!mergedFileConfig) { return false }
-    return hasAvailableFileSlot(mergedFileConfig, combinedFiles)
-  }, [combinedFiles, mergedFileConfig])
+  const hasImageUploadSlot = React.useMemo(() => {
+    if (!canUploadImages || !imageFileConfig) { return false }
+    return hasAvailableFileSlot(imageFileConfig, imageFiles)
+  }, [canUploadImages, imageFileConfig, imageFiles])
+  const hasAttachmentUploadSlot = React.useMemo(() => {
+    if (!canUploadAttachments || !fileConfig) { return false }
+    return hasAvailableFileSlot(fileConfig, attachmentFiles)
+  }, [attachmentFiles, canUploadAttachments, fileConfig])
+  const hasUploadSlot = hasImageUploadSlot || hasAttachmentUploadSlot
   const isAttachmentButtonDisabled = (!canUploadImages && !canUploadAttachments) || !hasUploadSlot
   useEffect(() => {
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
@@ -276,7 +281,7 @@ const Chat: FC<IChatProps> = ({
                       >
                         <FileUploaderInAttachmentWrapper
                           fileConfig={mergedFileConfig}
-                          value={[...imageFiles, ...attachmentFiles]}
+                          value={combinedFiles}
                           onChange={(files) => {
                             const images = files.filter(f => f.supportFileType === 'image')
                             const attachments = files.filter(f => f.supportFileType !== 'image')
