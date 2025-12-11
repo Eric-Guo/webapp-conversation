@@ -44,6 +44,7 @@ const FileInAttachmentItem = ({
   const { id, name, type, progress, supportFileType, base64Url, url, isRemote } = file
   const ext = getFileExtension(name, type, isRemote)
   const isImageFile = supportFileType === SupportUploadFileTypes.image
+  const imageUrl = base64Url || url || ''
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
   return (
     <>
@@ -56,7 +57,7 @@ const FileInAttachmentItem = ({
             isImageFile && (
               <FileImageRender
                 className='h-8 w-8'
-                imageUrl={base64Url || url || ''}
+                imageUrl={imageUrl}
               />
             )
           }
@@ -122,7 +123,7 @@ const FileInAttachmentItem = ({
           }
           {
             canPreview && isImageFile && (
-              <ActionButton className='mr-1' onClick={() => setImagePreviewUrl(url || '')}>
+              <ActionButton className='mr-1' onClick={() => setImagePreviewUrl(imageUrl)}>
                 <RiEyeLine className='h-4 w-4' />
               </ActionButton>
             )
