@@ -100,6 +100,7 @@ const Chat: FC<IChatProps> = ({
       allowed_file_upload_methods: allowedMethods,
       number_limits: visionConfig.number_limits,
       fileUploadConfig: {
+        batch_count_limit: 5,
         image_file_size_limit: visionConfig.image_file_size_limit,
         file_size_limit: Number(visionConfig.image_file_size_limit) || 0,
       },
@@ -114,6 +115,8 @@ const Chat: FC<IChatProps> = ({
   const canUploadAttachments = !!fileConfig?.enabled
   const isAttachmentLimitReached = canUploadAttachments && !!(fileConfig?.number_limits && attachmentFiles.length >= fileConfig.number_limits)
   const isAttachmentButtonDisabled = (!canUploadImages || isImageUploadLimitReached) && (!canUploadAttachments || isAttachmentLimitReached)
+
+  const mergedFileConfig = canUploadAttachments ? fileConfig : imageFileConfig
   useEffect(() => {
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
   }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
@@ -220,35 +223,26 @@ const Chat: FC<IChatProps> = ({
                   />
                 </div>
                 {
-                  (canUploadImages || canUploadAttachments) && (
+                  (canUploadImages || canUploadAttachments) && mergedFileConfig && (
                     <div className='relative flex items-start'>
                       <div
                         className={cn(
-                          'absolute right-0 bottom-full mb-2 w-[360px] rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)] space-y-4',
+                          'absolute right-0 bottom-full mb-2 w-[360px] rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)]',
                           !isAttachmentMenuOpen && 'hidden',
                         )}
                       >
-                        {canUploadImages && imageFileConfig && (
-                          <FileUploaderInAttachmentWrapper
-                            fileConfig={imageFileConfig}
-                            value={imageFiles}
-                            onChange={setImageFiles}
-                            variant='default'
-                            listDisplay='image'
-                          />
-                        )}
-                        {canUploadImages && canUploadAttachments && (
-                          <div className='h-px bg-gray-100' />
-                        )}
-                        {canUploadAttachments && fileConfig && (
-                          <FileUploaderInAttachmentWrapper
-                            fileConfig={fileConfig}
-                            value={attachmentFiles}
-                            onChange={setAttachmentFiles}
-                            onHandleClipboardPasteFile={handleClipboardPasteReady}
-                            variant='default'
-                          />
-                        )}
+                        <FileUploaderInAttachmentWrapper
+                          fileConfig={mergedFileConfig}
+                          value={[...imageFiles, ...attachmentFiles]}
+                          onChange={(files) => {
+                            const images = files.filter(f => f.supportFileType === 'image')
+                            const attachments = files.filter(f => f.supportFileType !== 'image')
+                            setImageFiles(images)
+                            setAttachmentFiles(attachments)
+                          }}
+                          onHandleClipboardPasteFile={handleClipboardPasteReady}
+                          variant='default'
+                        />
                       </div>
                       <button
                         type='button'

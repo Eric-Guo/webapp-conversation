@@ -2,6 +2,7 @@
 
 import type { FC, ReactNode } from 'react'
 import { SessionProvider } from 'next-auth/react'
+import { ToastProvider } from '@/app/components/base/toast'
 
 interface ProvidersProps {
   children: ReactNode
@@ -10,7 +11,9 @@ interface ProvidersProps {
 const Providers: FC<ProvidersProps> = ({ children }) => {
   return (
     <SessionProvider>
-      {children}
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </SessionProvider>
   )
 }

@@ -18,17 +18,7 @@ const translation = {
     dislike: 'không thích',
     ok: 'OK',
   },
-  imageUploader: {
-    uploadFromComputer: 'Tải lên từ máy tính',
-    uploadFromComputerReadError: 'Đọc ảnh thất bại, vui lòng thử lại.',
-    uploadFromComputerUploadError: 'Tải ảnh lên thất bại, vui lòng tải lại.',
-    uploadFromComputerLimit: 'Ảnh tải lên không được vượt quá {{size}} MB',
-    pasteImageLink: 'Dán liên kết ảnh',
-    pasteImageLinkInputPlaceholder: 'Dán liên kết ảnh vào đây',
-    pasteImageLinkInvalid: 'Liên kết ảnh không hợp lệ',
-    imageUpload: 'Tải ảnh lên',
-  },
-  fileUploader: {
+  uploader: {
     uploadFromComputer: 'Tải lên cục bộ',
     pasteFileLink: 'Dán liên kết tệp',
     pasteFileLinkInputPlaceholder: 'Nhập URL...',

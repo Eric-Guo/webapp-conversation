@@ -78,7 +78,7 @@ export const useImageFiles = () => {
           setFiles(newFiles)
         },
         onErrorCallback: () => {
-          notify({ type: 'error', message: t('common.imageUploader.uploadFromComputerUploadError') })
+          notify({ type: 'error', message: t('common.uploader.uploadFromComputerUploadError') })
           const newFiles = [...files.slice(0, index), { ...currentImageFile, progress: -1 }, ...files.slice(index + 1)]
           filesRef.current = newFiles
           setFiles(newFiles)

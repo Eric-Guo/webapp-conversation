@@ -31,7 +31,7 @@ const Uploader: FC<UploaderProps> = ({
     if (!file) { return }
 
     if (limit && file.size > limit * 1024 * 1024) {
-      notify({ type: 'error', message: t('common.imageUploader.uploadFromComputerLimit', { size: limit }) })
+      notify({ type: 'error', message: t('common.uploader.uploadFromComputerLimit', { size: limit }) })
       return
     }
 
@@ -58,7 +58,7 @@ const Uploader: FC<UploaderProps> = ({
             onUpload({ ...imageFile, fileId: res.id, progress: 100 })
           },
           onErrorCallback: () => {
-            notify({ type: 'error', message: t('common.imageUploader.uploadFromComputerUploadError') })
+            notify({ type: 'error', message: t('common.uploader.uploadFromComputerUploadError') })
             onUpload({ ...imageFile, progress: -1 })
           },
         })
@@ -68,7 +68,7 @@ const Uploader: FC<UploaderProps> = ({
     reader.addEventListener(
       'error',
       () => {
-        notify({ type: 'error', message: t('common.imageUploader.uploadFromComputerReadError') })
+        notify({ type: 'error', message: t('common.uploader.uploadFromComputerReadError') })
       },
       false,
     )
