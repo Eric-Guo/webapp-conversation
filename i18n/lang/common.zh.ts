@@ -27,6 +27,7 @@ const translation = {
     uploadFromComputerLimit: '上传 {{type}} 不能超过 {{size}}',
     pasteFileLinkInvalid: '文件链接无效',
     fileExtensionNotSupport: '文件类型不支持',
+    uploadCountLimit: '上传数量已达上限',
   },
 }
 

@@ -27,6 +27,7 @@ const translation = {
     pasteFileLinkInvalid: 'Liên kết tệp không hợp lệ',
     uploadFromComputerUploadError: 'Tải lên tệp không thành công, vui lòng tải lên lại.',
     uploadFromComputerReadError: 'Đọc tệp không thành công, vui lòng thử lại.',
+    uploadCountLimit: 'Đã đạt giới hạn số tệp tải lên',
   },
 }
 

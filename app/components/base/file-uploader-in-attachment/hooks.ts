@@ -16,6 +16,7 @@ import {
   isAllowedFileExtension,
   getFileNameFromUrl,
   getFileExtension,
+  canUploadMoreFiles,
 } from './utils'
 import {
   AUDIO_SIZE_LIMIT,
@@ -212,6 +213,11 @@ export const useFile = (fileConfig: FileUpload) => {
       mimeType,
       allowedFileTypes.includes(SupportUploadFileTypes.custom),
     ) || allowedFileTypes[0] || SupportUploadFileTypes.document
+    const currentFiles = fileStore.getState().files
+    if (!canUploadMoreFiles(supportFileType, fileConfig, currentFiles)) {
+      notify({ type: 'error', message: t('common.uploader.uploadCountLimit') })
+      return
+    }
 
     const uploadingFile = {
       id: uuid4(),
@@ -240,7 +246,7 @@ export const useFile = (fileConfig: FileUpload) => {
     }
 
     handleUpdateFile({ ...uploadingFile, progress: 100 })
-  }, [checkSizeLimit, fileConfig.allowed_file_extensions, fileConfig.allowed_file_types, handleAddFile, handleUpdateFile, notify, startProgressTimer, t])
+  }, [checkSizeLimit, fileConfig, fileStore, handleAddFile, handleUpdateFile, notify, startProgressTimer, t])
 
   const handleLoadFileFromLinkSuccess = useCallback((fileId: string) => {
     const {
@@ -285,6 +291,11 @@ export const useFile = (fileConfig: FileUpload) => {
     const allowedFileTypes = fileConfig.allowed_file_types
     const fileType = getSupportFileType(file.name, file.type, allowedFileTypes?.includes(SupportUploadFileTypes.custom))
     if (!checkSizeLimit(fileType, file.size)) { return }
+    const currentFiles = fileStore.getState().files
+    if (!canUploadMoreFiles(fileType, fileConfig, currentFiles)) {
+      notify({ type: 'error', message: t('common.uploader.uploadCountLimit') })
+      return
+    }
 
     const reader = new FileReader()
     const isImage = file.type.startsWith('image')
@@ -328,7 +339,7 @@ export const useFile = (fileConfig: FileUpload) => {
       false,
     )
     reader.readAsDataURL(file)
-  }, [checkSizeLimit, notify, t, handleAddFile, handleUpdateFile, params.token, fileConfig?.allowed_file_types, fileConfig?.allowed_file_extensions])
+  }, [checkSizeLimit, notify, t, handleAddFile, handleUpdateFile, params.token, fileConfig, fileStore])
 
   const handleClipboardPasteFile = useCallback((e: ClipboardEvent<HTMLTextAreaElement>) => {
     const file = e.clipboardData?.files[0]

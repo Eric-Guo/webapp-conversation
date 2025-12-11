@@ -13,7 +13,7 @@ import Toast from '@/app/components/base/toast'
 import FileUploaderInAttachmentWrapper from '@/app/components/base/file-uploader-in-attachment'
 import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
-import { getProcessedFiles } from '@/app/components/base/file-uploader-in-attachment/utils'
+import { getProcessedFiles, hasAvailableFileSlot } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
 
 export interface IChatProps {
@@ -96,6 +96,12 @@ const Chat: FC<IChatProps> = ({
 
     return {
       enabled: visionConfig.enabled,
+      image: {
+        enabled: visionConfig.enabled,
+        detail: visionConfig.detail,
+        number_limits: visionConfig.number_limits,
+        transfer_methods: allowedMethods,
+      },
       allowed_file_types: [SupportUploadFileTypes.image],
       allowed_file_upload_methods: allowedMethods,
       number_limits: visionConfig.number_limits,
@@ -111,10 +117,8 @@ const Chat: FC<IChatProps> = ({
     setHandleAttachmentPaste(() => handler)
   }
   const canUploadImages = !!(visionConfig?.enabled && imageFileConfig?.enabled)
-  const isImageUploadLimitReached = canUploadImages && !!(imageFileConfig?.number_limits && imageFiles.length >= imageFileConfig.number_limits)
   const canUploadAttachments = !!fileConfig?.enabled
-  const isAttachmentLimitReached = canUploadAttachments && !!(fileConfig?.number_limits && attachmentFiles.length >= fileConfig.number_limits)
-  const isAttachmentButtonDisabled = (!canUploadImages && !canUploadAttachments) || isImageUploadLimitReached || isAttachmentLimitReached
+  const combinedFiles = React.useMemo(() => [...imageFiles, ...attachmentFiles], [imageFiles, attachmentFiles])
 
   const mergedFileConfig = React.useMemo<FileUpload | undefined>(() => {
     if (canUploadAttachments && canUploadImages && fileConfig && imageFileConfig) {
@@ -138,6 +142,7 @@ const Chat: FC<IChatProps> = ({
 
       return {
         ...fileConfig,
+        image: imageFileConfig.image || fileConfig.image,
         allowed_file_types: allowedFileTypes,
         allowed_file_extensions: allowedFileExtensions,
         allowed_file_upload_methods: allowedFileUploadMethods,
@@ -150,6 +155,11 @@ const Chat: FC<IChatProps> = ({
     if (canUploadAttachments) { return fileConfig }
     return imageFileConfig
   }, [canUploadAttachments, canUploadImages, fileConfig, imageFileConfig])
+  const hasUploadSlot = React.useMemo(() => {
+    if (!mergedFileConfig) { return false }
+    return hasAvailableFileSlot(mergedFileConfig, combinedFiles)
+  }, [combinedFiles, mergedFileConfig])
+  const isAttachmentButtonDisabled = (!canUploadImages && !canUploadAttachments) || !hasUploadSlot
   useEffect(() => {
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
   }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])

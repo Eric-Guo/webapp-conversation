@@ -16,6 +16,7 @@ import {
   useStore,
 } from './store'
 import FileItem from './file-item'
+import { hasAvailableFileSlot } from './utils'
 import ImageList from '@/app/components/base/image-uploader/image-list'
 import cn from '@/utils/classnames'
 import type { ImageFile } from '@/types/app'
@@ -124,7 +125,7 @@ const FileUploaderInAttachment = ({
   }
 
   const renderCompactTrigger = useCallback((open: boolean) => {
-    const disabled = !!(fileConfig.number_limits && files.length >= fileConfig.number_limits)
+    const disabled = !hasAvailableFileSlot(fileConfig, files)
     if (trigger) { return trigger(open) }
 
     return (
@@ -140,7 +141,7 @@ const FileUploaderInAttachment = ({
         <RiAttachmentLine className='h-5 w-5' />
       </button>
     )
-  }, [fileConfig.number_limits, files.length, trigger])
+  }, [fileConfig, files, trigger])
 
   if (variant === 'compact') {
     return (

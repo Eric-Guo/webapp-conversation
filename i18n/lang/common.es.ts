@@ -26,6 +26,7 @@ const translation = {
     uploadFromComputerLimit: 'El archivo de carga no puede exceder {{size}}',
     pasteFileLinkInvalid: 'Enlace de archivo no válido',
     fileExtensionNotSupport: 'Extensión de archivo no compatible',
+    uploadCountLimit: 'Se alcanzó el límite de archivos',
     pasteFileLinkInputPlaceholder: 'Introduzca la URL...',
   },
 }

@@ -3,6 +3,7 @@ import { useStore } from './store'
 import type { FileUpload } from './types'
 import { FILE_EXTS } from './constants'
 import { SupportUploadFileTypes } from './types'
+import { getLimitForFileType, hasAvailableFileSlot } from './utils'
 
 interface FileInputProps {
   fileConfig: FileUpload
@@ -16,13 +17,8 @@ const FileInput = ({
     const targetFiles = e.target.files
 
     if (targetFiles) {
-      if (fileConfig.number_limits) {
-        for (let i = 0; i < targetFiles.length; i++) {
-          if (i + 1 + files.length <= fileConfig.number_limits) { handleLocalFileUpload(targetFiles[i]) }
-        }
-      }
-      else {
-        handleLocalFileUpload(targetFiles[0])
+      for (let i = 0; i < targetFiles.length; i++) {
+        handleLocalFileUpload(targetFiles[i])
       }
     }
   }
@@ -31,6 +27,9 @@ const FileInput = ({
   const isCustom = allowedFileTypes?.includes(SupportUploadFileTypes.custom)
   const exts = isCustom ? (fileConfig.allowed_file_extensions || []) : (allowedFileTypes?.map(type => FILE_EXTS[type]) || []).flat().map(item => `.${item}`)
   const accept = exts.join(',')
+  const typeLimits = allowedFileTypes?.map(type => getLimitForFileType(type, fileConfig)).filter(limit => typeof limit === 'number') as number[] | undefined
+  const maxLimit = typeLimits?.length ? Math.max(...typeLimits) : getLimitForFileType('', fileConfig)
+  const multiple = typeof maxLimit === 'number' ? maxLimit > 1 : false
 
   return (
     <input
@@ -39,8 +38,8 @@ const FileInput = ({
       type='file'
       onChange={handleChange}
       accept={accept}
-      disabled={!!(fileConfig.number_limits && files.length >= fileConfig?.number_limits)}
-      multiple={!!fileConfig.number_limits && fileConfig.number_limits > 1}
+      disabled={!hasAvailableFileSlot(fileConfig, files)}
+      multiple={multiple}
     />
   )
 }

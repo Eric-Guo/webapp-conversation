@@ -27,6 +27,7 @@ const translation = {
     uploadFromComputerLimit: 'Upload {{type}} cannot exceed {{size}}',
     pasteFileLinkInvalid: 'Invalid file link',
     fileExtensionNotSupport: 'File extension not supported',
+    uploadCountLimit: 'File upload limit reached',
   },
 }
 

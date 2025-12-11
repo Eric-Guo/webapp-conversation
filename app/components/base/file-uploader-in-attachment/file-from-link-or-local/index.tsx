@@ -8,6 +8,7 @@ import FileInput from '../file-input'
 import { useFile } from '../hooks'
 import { useStore } from '../store'
 import { FILE_URL_REGEX } from '../constants'
+import { hasAvailableFileSlot } from '../utils'
 import type { FileUpload } from '../types'
 import {
   PortalToFollowElem,
@@ -35,7 +36,7 @@ const FileFromLinkOrLocal = ({
   const [url, setUrl] = useState('')
   const [showError, setShowError] = useState(false)
   const { handleLoadFileFromLink } = useFile(fileConfig)
-  const disabled = !!fileConfig.number_limits && files.length >= fileConfig.number_limits
+  const disabled = !hasAvailableFileSlot(fileConfig, files)
 
   const handleSaveUrl = () => {
     if (!url) { return }
