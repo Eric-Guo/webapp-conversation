@@ -97,12 +97,22 @@ export const getSupportFileType = (fileName: string, fileMimetype: string, isCus
 }
 
 export const getProcessedFiles = (files: FileEntity[]) => {
-  return files.filter(file => file.progress !== -1).map(fileItem => ({
-    type: fileItem.supportFileType,
-    transfer_method: fileItem.transferMethod,
-    url: fileItem.url || '',
-    upload_file_id: fileItem.uploadedId || '',
-  }))
+  return files
+    .filter(file => file.progress !== -1)
+    .map((fileItem) => {
+      const baseInfo = {
+        type: fileItem.supportFileType,
+        transfer_method: fileItem.transferMethod,
+        url: fileItem.url || '',
+      }
+      if (fileItem.transferMethod === TransferMethod.remote_url) {
+        return baseInfo
+      }
+      return {
+        ...baseInfo,
+        upload_file_id: fileItem.uploadedId || '',
+      }
+    })
 }
 
 export const getProcessedFilesFromResponse = (files: FileResponse[]) => {
@@ -122,8 +132,22 @@ export const getProcessedFilesFromResponse = (files: FileResponse[]) => {
 }
 
 export const getFileNameFromUrl = (url: string) => {
-  const urlParts = url.split('/')
-  return urlParts[urlParts.length - 1] || ''
+  const decode = (value: string) => {
+    try { return decodeURIComponent(value) }
+    catch {
+      return value
+    }
+  }
+  try {
+    const { pathname } = new URL(url)
+    const parts = pathname.split('/').filter(Boolean)
+    return decode(parts[parts.length - 1] || '')
+  }
+  catch {
+    const sanitizedUrl = url.split('#')[0].split('?')[0]
+    const urlParts = sanitizedUrl.split('/')
+    return decode(urlParts[urlParts.length - 1] || '')
+  }
 }
 
 export const getSupportFileExtensionList = (allowFileTypes: string[], allowFileExtensions: string[]) => {

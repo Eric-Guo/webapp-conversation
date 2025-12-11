@@ -1,4 +1,5 @@
 import type { ClipboardEvent } from 'react'
+import mime from 'mime'
 import {
   useCallback,
   useState,
@@ -13,6 +14,7 @@ import {
   fileUpload,
   getSupportFileType,
   isAllowedFileExtension,
+  getFileNameFromUrl,
 } from './utils'
 import {
   AUDIO_SIZE_LIMIT,
@@ -25,7 +27,6 @@ import { SupportUploadFileTypes } from './types'
 import { useToastContext } from '@/app/components/base/toast'
 import { TransferMethod } from '@/types/app'
 import { formatFileSize } from '@/utils/format'
-import { uploadRemoteFileInfo } from '@/service/common'
 
 export const useFileSizeLimit = (fileUploadConfig?: FileUploadConfigResponse) => {
   const imgSizeLimit = Number(fileUploadConfig?.image_file_size_limit) * 1024 * 1024 || IMG_SIZE_LIMIT
@@ -187,7 +188,7 @@ export const useFile = (fileConfig: FileUpload) => {
         },
       }, !!params.token)
     }
-  }, [fileStore, notify, t, handleUpdateFile])
+  }, [fileStore, notify, t, handleUpdateFile, params.token])
 
   const startProgressTimer = useCallback((fileId: string) => {
     const timer = setInterval(() => {
@@ -199,44 +200,43 @@ export const useFile = (fileConfig: FileUpload) => {
     }, 200)
   }, [fileStore, handleUpdateFile])
   const handleLoadFileFromLink = useCallback((url: string) => {
-    const allowedFileTypes = fileConfig.allowed_file_types
+    const allowedFileTypes = fileConfig.allowed_file_types || []
+    const allowedFileExtensions = fileConfig.allowed_file_extensions || []
+    const hasAllowList = allowedFileTypes.length > 0 || allowedFileExtensions.length > 0
+    const fileName = getFileNameFromUrl(url) || url
+    const mimeType = mime.getType(fileName) || ''
+    const supportFileType = getSupportFileType(
+      fileName,
+      mimeType,
+      allowedFileTypes.includes(SupportUploadFileTypes.custom),
+    ) || allowedFileTypes[0] || SupportUploadFileTypes.document
 
     const uploadingFile = {
       id: uuid4(),
-      name: url,
-      type: '',
+      name: fileName,
+      type: mimeType,
       size: 0,
       progress: 0,
       transferMethod: TransferMethod.remote_url,
-      supportFileType: '',
+      supportFileType,
       url,
-      isRemote: true,
     }
     handleAddFile(uploadingFile)
     startProgressTimer(uploadingFile.id)
 
-    uploadRemoteFileInfo(url, !!params.token).then((res) => {
-      const newFile = {
-        ...uploadingFile,
-        type: res.mime_type,
-        size: res.size,
-        progress: 100,
-        supportFileType: getSupportFileType(res.name, res.mime_type, allowedFileTypes?.includes(SupportUploadFileTypes.custom)),
-        uploadedId: res.id,
-        url: res.url,
-      }
-      if (!isAllowedFileExtension(res.name, res.mime_type, fileConfig.allowed_file_types || [], fileConfig.allowed_file_extensions || [])) {
-        notify({ type: 'error', message: t('common.uploader.fileExtensionNotSupport') })
-        handleUpdateFile({ ...newFile, progress: -1, uploadedId: undefined })
-        return
-      }
-      if (!checkSizeLimit(newFile.supportFileType, newFile.size)) { handleUpdateFile({ ...newFile, progress: -1, uploadedId: undefined }) }
-      else { handleUpdateFile(newFile) }
-    }).catch(() => {
-      notify({ type: 'error', message: t('common.uploader.pasteFileLinkInvalid') })
+    if (hasAllowList && !isAllowedFileExtension(fileName, mimeType, allowedFileTypes, allowedFileExtensions)) {
+      notify({ type: 'error', message: t('common.uploader.fileExtensionNotSupport') })
       handleUpdateFile({ ...uploadingFile, progress: -1 })
-    })
-  }, [checkSizeLimit, handleAddFile, handleUpdateFile, notify, t, fileConfig?.allowed_file_types, fileConfig.allowed_file_extensions, startProgressTimer, params.token])
+      return
+    }
+
+    if (!checkSizeLimit(supportFileType, uploadingFile.size)) {
+      handleUpdateFile({ ...uploadingFile, progress: -1 })
+      return
+    }
+
+    handleUpdateFile({ ...uploadingFile, progress: 100 })
+  }, [checkSizeLimit, fileConfig.allowed_file_extensions, fileConfig.allowed_file_types, handleAddFile, handleUpdateFile, notify, startProgressTimer, t])
 
   const handleLoadFileFromLinkSuccess = useCallback((fileId: string) => {
     const {

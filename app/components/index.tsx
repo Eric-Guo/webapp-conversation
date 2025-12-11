@@ -390,11 +390,19 @@ const Main: FC<IMainProps> = () => {
   }
 
   const transformToServerFile = (fileItem: any) => {
-    return {
-      type: 'image',
+    const baseInfo = {
+      type: fileItem.supportFileType || fileItem.type,
       transfer_method: fileItem.transferMethod,
-      url: fileItem.url,
-      upload_file_id: fileItem.id,
+    }
+    if (fileItem.transferMethod === TransferMethod.remote_url) {
+      return {
+        ...baseInfo,
+        url: fileItem.url,
+      }
+    }
+    return {
+      ...baseInfo,
+      upload_file_id: fileItem.uploadedId || fileItem.id,
     }
   }
 
