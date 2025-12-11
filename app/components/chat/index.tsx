@@ -88,11 +88,12 @@ const Chat: FC<IChatProps> = ({
   }, [controlClearQuery])
   const [imageFiles, setImageFiles] = React.useState<FileEntity[]>([])
   const imageFileConfig = React.useMemo<FileUpload | undefined>(() => {
-    if (!visionConfig) { return undefined }
+    const transferMethods = visionConfig?.transfer_methods
+    if (!visionConfig || !transferMethods?.length) { return undefined }
 
-    const allowedMethods = visionConfig.transfer_methods.includes(TransferMethod.all)
+    const allowedMethods = transferMethods.includes(TransferMethod.all)
       ? [TransferMethod.local_file, TransferMethod.remote_url]
-      : visionConfig.transfer_methods
+      : transferMethods
 
     return {
       enabled: visionConfig.enabled,
