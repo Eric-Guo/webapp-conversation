@@ -7,7 +7,6 @@ import { useParams } from 'next/navigation'
 import produce from 'immer'
 import { v4 as uuid4 } from 'uuid'
 import { useTranslation } from 'react-i18next'
-import { noop } from 'lodash-es'
 import type { FileEntity, FileUpload, FileUploadConfigResponse } from './types'
 import { useFileStore } from './store'
 import {
@@ -169,6 +168,7 @@ export const useFile = (fileConfig: FileUpload) => {
 
     if (index > -1) {
       const uploadingFile = files[index]
+      if (!uploadingFile.originalFile) { return }
       const newFiles = produce(files, (draft) => {
         draft[index].progress = 0
       })
@@ -227,20 +227,44 @@ export const useFile = (fileConfig: FileUpload) => {
       }
       if (!isAllowedFileExtension(res.name, res.mime_type, fileConfig.allowed_file_types || [], fileConfig.allowed_file_extensions || [])) {
         notify({ type: 'error', message: t('common.fileUploader.fileExtensionNotSupport') })
-        handleRemoveFile(uploadingFile.id)
+        handleUpdateFile({ ...newFile, progress: -1, uploadedId: undefined })
         return
       }
-      if (!checkSizeLimit(newFile.supportFileType, newFile.size)) { handleRemoveFile(uploadingFile.id) }
+      if (!checkSizeLimit(newFile.supportFileType, newFile.size)) { handleUpdateFile({ ...newFile, progress: -1, uploadedId: undefined }) }
       else { handleUpdateFile(newFile) }
     }).catch(() => {
       notify({ type: 'error', message: t('common.fileUploader.pasteFileLinkInvalid') })
-      handleRemoveFile(uploadingFile.id)
+      handleUpdateFile({ ...uploadingFile, progress: -1 })
     })
-  }, [checkSizeLimit, handleAddFile, handleUpdateFile, notify, t, handleRemoveFile, fileConfig?.allowed_file_types, fileConfig.allowed_file_extensions, startProgressTimer, params.token])
+  }, [checkSizeLimit, handleAddFile, handleUpdateFile, notify, t, fileConfig?.allowed_file_types, fileConfig.allowed_file_extensions, startProgressTimer, params.token])
 
-  const handleLoadFileFromLinkSuccess = useCallback(noop, [])
+  const handleLoadFileFromLinkSuccess = useCallback((fileId: string) => {
+    const {
+      files,
+      setFiles,
+    } = fileStore.getState()
 
-  const handleLoadFileFromLinkError = useCallback(noop, [])
+    const newFiles = produce(files, (draft) => {
+      const index = draft.findIndex(file => file.id === fileId)
+
+      if (index > -1) { draft[index].progress = 100 }
+    })
+    setFiles(newFiles)
+  }, [fileStore])
+
+  const handleLoadFileFromLinkError = useCallback((fileId: string) => {
+    const {
+      files,
+      setFiles,
+    } = fileStore.getState()
+
+    const newFiles = produce(files, (draft) => {
+      const index = draft.findIndex(file => file.id === fileId)
+
+      if (index > -1) { draft[index].progress = -1 }
+    })
+    setFiles(newFiles)
+  }, [fileStore])
 
   const handleClearFiles = useCallback(() => {
     const {

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
 } from 'react'
 import type { ClipboardEvent, ReactNode } from 'react'
 import {
@@ -11,6 +12,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useFile } from './hooks'
 import type { FileEntity, FileUpload } from './types'
+import { SupportUploadFileTypes } from './types'
 import FileFromLinkOrLocal from './file-from-link-or-local'
 import {
   FileContextProvider,
@@ -19,7 +21,9 @@ import {
 import FileInput from './file-input'
 import FileItem from './file-item'
 import Button from '@/app/components/base/button'
+import ImageList from '@/app/components/base/image-uploader/image-list'
 import cn from '@/utils/classnames'
+import type { ImageFile } from '@/types/app'
 import { TransferMethod } from '@/types/app'
 
 interface Option {
@@ -34,6 +38,7 @@ interface FileUploaderInAttachmentProps {
   trigger?: (open: boolean) => ReactNode
   listClassName?: string
   showList?: boolean
+  listDisplay?: 'file' | 'image'
 }
 const FileUploaderInAttachment = ({
   fileConfig,
@@ -42,6 +47,7 @@ const FileUploaderInAttachment = ({
   trigger,
   listClassName,
   showList = true,
+  listDisplay = 'file',
 }: FileUploaderInAttachmentProps) => {
   const { t } = useTranslation()
   const files = useStore(s => s.files)
@@ -49,7 +55,31 @@ const FileUploaderInAttachment = ({
     handleRemoveFile,
     handleReUploadFile,
     handleClipboardPasteFile,
+    handleLoadFileFromLinkSuccess,
+    handleLoadFileFromLinkError,
   } = useFile(fileConfig)
+  const allowedUploadMethods = useMemo(() => {
+    const methods = fileConfig.allowed_file_upload_methods?.length
+      ? fileConfig.allowed_file_upload_methods
+      : [TransferMethod.local_file, TransferMethod.remote_url]
+
+    if (methods.includes(TransferMethod.all)) { return [TransferMethod.local_file, TransferMethod.remote_url] }
+
+    return methods
+  }, [fileConfig.allowed_file_upload_methods])
+  const imageFiles = useMemo<ImageFile[]>(() => {
+    return files
+      .filter(file => file.supportFileType === SupportUploadFileTypes.image)
+      .map(file => ({
+        type: file.transferMethod,
+        _id: file.id,
+        fileId: file.uploadedId || '',
+        file: file.originalFile,
+        progress: file.progress,
+        url: file.url || '',
+        base64Url: file.base64Url || file.url || '',
+      }))
+  }, [files])
   const options = [
     {
       value: TransferMethod.local_file,
@@ -89,9 +119,9 @@ const FileUploaderInAttachment = ({
     return (open: boolean) => renderButton(option, open)
   }, [renderButton])
   const renderOption = useCallback((option: Option) => {
-    if (option.value === TransferMethod.local_file && fileConfig?.allowed_file_upload_methods?.includes(TransferMethod.local_file)) { return renderButton(option) }
+    if (option.value === TransferMethod.local_file && allowedUploadMethods.includes(TransferMethod.local_file)) { return renderButton(option) }
 
-    if (option.value === TransferMethod.remote_url && fileConfig?.allowed_file_upload_methods?.includes(TransferMethod.remote_url)) {
+    if (option.value === TransferMethod.remote_url && allowedUploadMethods.includes(TransferMethod.remote_url)) {
       return (
         <FileFromLinkOrLocal
           key={option.value}
@@ -101,7 +131,7 @@ const FileUploaderInAttachment = ({
         />
       )
     }
-  }, [renderButton, renderTrigger, fileConfig])
+  }, [renderButton, renderTrigger, allowedUploadMethods, fileConfig])
 
   const renderCompactTrigger = useCallback((open: boolean) => {
     const disabled = !!(fileConfig.number_limits && files.length >= fileConfig.number_limits)
@@ -126,11 +156,11 @@ const FileUploaderInAttachment = ({
     return (
       <div className='relative flex items-center'>
         {
-          (fileConfig.allowed_file_upload_methods?.includes(TransferMethod.local_file)
-            || fileConfig.allowed_file_upload_methods?.includes(TransferMethod.remote_url)) && (
+          (allowedUploadMethods.includes(TransferMethod.local_file)
+            || allowedUploadMethods.includes(TransferMethod.remote_url)) && (
             <FileFromLinkOrLocal
-              showFromLocal={fileConfig.allowed_file_upload_methods?.includes(TransferMethod.local_file)}
-              showFromLink={fileConfig.allowed_file_upload_methods?.includes(TransferMethod.remote_url)}
+              showFromLocal={allowedUploadMethods.includes(TransferMethod.local_file)}
+              showFromLink={allowedUploadMethods.includes(TransferMethod.remote_url)}
               trigger={renderCompactTrigger}
               fileConfig={fileConfig}
             />
@@ -139,18 +169,29 @@ const FileUploaderInAttachment = ({
         {
           showList && files.length > 0 && (
             <div className={cn('mt-2 space-y-1', listClassName)}>
-              {
-                files.map(file => (
-                  <FileItem
-                    key={file.id}
-                    file={file}
-                    showDeleteAction
-                    showDownloadAction={false}
-                    onRemove={() => handleRemoveFile(file.id)}
-                    onReUpload={() => handleReUploadFile(file.id)}
+              {listDisplay === 'image'
+                ? (
+                  <ImageList
+                    list={imageFiles}
+                    onRemove={handleRemoveFile}
+                    onReUpload={handleReUploadFile}
+                    onImageLinkLoadSuccess={handleLoadFileFromLinkSuccess}
+                    onImageLinkLoadError={handleLoadFileFromLinkError}
                   />
-                ))
-              }
+                )
+                : (
+                  files.map(file => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      showDeleteAction
+                      showDownloadAction={false}
+                      canPreview={file.supportFileType === SupportUploadFileTypes.image}
+                      onRemove={() => handleRemoveFile(file.id)}
+                      onReUpload={() => handleReUploadFile(file.id)}
+                    />
+                  ))
+                )}
             </div>
           )
         }
@@ -165,16 +206,29 @@ const FileUploaderInAttachment = ({
       </div>
       <div className='mt-1 space-y-1'>
         {
-          files.map(file => (
-            <FileItem
-              key={file.id}
-              file={file}
-              showDeleteAction
-              showDownloadAction={false}
-              onRemove={() => handleRemoveFile(file.id)}
-              onReUpload={() => handleReUploadFile(file.id)}
-            />
-          ))
+          listDisplay === 'image'
+            ? (
+              <ImageList
+                list={imageFiles}
+                onRemove={handleRemoveFile}
+                onReUpload={handleReUploadFile}
+                onImageLinkLoadSuccess={handleLoadFileFromLinkSuccess}
+                onImageLinkLoadError={handleLoadFileFromLinkError}
+              />
+            )
+            : (
+              files.map(file => (
+                <FileItem
+                  key={file.id}
+                  file={file}
+                  showDeleteAction
+                  showDownloadAction={false}
+                  canPreview={file.supportFileType === SupportUploadFileTypes.image}
+                  onRemove={() => handleRemoveFile(file.id)}
+                  onReUpload={() => handleReUploadFile(file.id)}
+                />
+              ))
+            )
         }
       </div>
     </div>
@@ -190,6 +244,7 @@ interface FileUploaderInAttachmentWrapperProps {
   trigger?: (open: boolean) => React.ReactNode
   listClassName?: string
   showList?: boolean
+  listDisplay?: 'file' | 'image'
 }
 const FileUploaderInAttachmentWrapper = ({
   value,
@@ -200,6 +255,7 @@ const FileUploaderInAttachmentWrapper = ({
   trigger,
   listClassName,
   showList,
+  listDisplay,
 }: FileUploaderInAttachmentWrapperProps) => {
   return (
     <FileContextProvider
@@ -213,6 +269,7 @@ const FileUploaderInAttachmentWrapper = ({
         trigger={trigger}
         listClassName={listClassName}
         showList={showList}
+        listDisplay={listDisplay}
       />
     </FileContextProvider>
   )

@@ -23,6 +23,7 @@ import { formatFileSize } from '@/utils/format'
 import cn from '@/utils/classnames'
 import ReplayLine from '@/app/components/base/icons/other/ReplayLine'
 import ImagePreview from '@/app/components/base/image-uploader/image-preview'
+import { TransferMethod } from '@/types/app'
 
 interface FileInAttachmentItemProps {
   file: FileEntity
@@ -103,7 +104,7 @@ const FileInAttachmentItem = ({
             )
           }
           {
-            progress === -1 && (
+            progress === -1 && file.transferMethod === TransferMethod.local_file && (
               <ActionButton
                 className='mr-1'
                 onClick={() => onReUpload?.(id)}

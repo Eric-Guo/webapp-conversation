@@ -10,13 +10,12 @@ import type { FeedbackFunc } from './type'
 import type { ChatItem, VisionFile, VisionSettings } from '@/types/app'
 import { TransferMethod } from '@/types/app'
 import Toast from '@/app/components/base/toast'
-import ChatImageUploader from '@/app/components/base/image-uploader/chat-image-uploader'
-import ImageList from '@/app/components/base/image-uploader/image-list'
-import { useImageFiles } from '@/app/components/base/image-uploader/hooks'
 import FileUploaderInAttachmentWrapper from '@/app/components/base/file-uploader-in-attachment'
 import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
+import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
 import { getProcessedFiles } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
+import FolderUpload from '@/app/components/base/icons/other/folder-upload'
 
 export interface IChatProps {
   chatList: ChatItem[]
@@ -87,16 +86,25 @@ const Chat: FC<IChatProps> = ({
       queryRef.current = ''
     }
   }, [controlClearQuery])
-  const {
-    files,
-    onUpload,
-    onRemove,
-    onReUpload,
-    onImageLinkLoadError,
-    onImageLinkLoadSuccess,
-    onClear,
-  } = useImageFiles()
+  const [imageFiles, setImageFiles] = React.useState<FileEntity[]>([])
+  const imageFileConfig = React.useMemo<FileUpload | undefined>(() => {
+    if (!visionConfig) { return undefined }
 
+    const allowedMethods = visionConfig.transfer_methods.includes(TransferMethod.all)
+      ? [TransferMethod.local_file, TransferMethod.remote_url]
+      : visionConfig.transfer_methods
+
+    return {
+      enabled: visionConfig.enabled,
+      allowed_file_types: [SupportUploadFileTypes.image],
+      allowed_file_upload_methods: allowedMethods,
+      number_limits: visionConfig.number_limits,
+      fileUploadConfig: {
+        image_file_size_limit: visionConfig.image_file_size_limit,
+        file_size_limit: Number(visionConfig.image_file_size_limit) || 0,
+      },
+    }
+  }, [visionConfig])
   const [attachmentFiles, setAttachmentFiles] = React.useState<FileEntity[]>([])
   const handleClipboardPasteReady = (handler: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void) => {
     setHandleAttachmentPaste(() => handler)
@@ -105,17 +113,13 @@ const Chat: FC<IChatProps> = ({
   const handleSend = () => {
     if (isSendButtonDisabled) { return }
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
-    const imageFiles: VisionFile[] = files.filter(file => file.progress !== -1).map(fileItem => ({
-      type: 'image',
-      transfer_method: fileItem.type,
-      url: fileItem.url,
-      upload_file_id: fileItem.fileId,
-    }))
+    const imageFilePayloads: VisionFile[] = getProcessedFiles(imageFiles)
     const docAndOtherFiles: VisionFile[] = getProcessedFiles(attachmentFiles)
-    const combinedFiles: VisionFile[] = [...imageFiles, ...docAndOtherFiles]
+    const combinedFiles: VisionFile[] = [...imageFilePayloads, ...docAndOtherFiles]
     onSend(queryRef.current, combinedFiles)
-    if (!files.find(item => item.type === TransferMethod.local_file && !item.fileId)) {
-      if (files.length) { onClear() }
+    const hasPendingLocalImages = imageFiles.some(item => item.transferMethod === TransferMethod.local_file && !item.uploadedId)
+    if (!hasPendingLocalImages) {
+      if (imageFiles.length) { setImageFiles([]) }
       if (!isResponding) {
         setQuery('')
         queryRef.current = ''
@@ -195,12 +199,35 @@ const Chat: FC<IChatProps> = ({
             <div className='relative space-y-2'>
               <div className='flex items-start gap-3 rounded-[18px] border border-gray-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)]'>
                 {
-                  visionConfig?.enabled && (
+                  visionConfig?.enabled && imageFileConfig && (
                     <div className='pt-1'>
-                      <ChatImageUploader
-                        settings={visionConfig}
-                        onUpload={onUpload}
-                        disabled={files.length >= visionConfig.number_limits}
+                      <FileUploaderInAttachmentWrapper
+                        fileConfig={imageFileConfig}
+                        value={imageFiles}
+                        onChange={setImageFiles}
+                        variant='compact'
+                        listDisplay='image'
+                        trigger={(open) => {
+                          const disabled = !!(imageFileConfig.number_limits && imageFiles.length >= imageFileConfig.number_limits)
+                          return (
+                            <button
+                              type='button'
+                              className={cn(
+                                'relative flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200',
+                                disabled ? 'cursor-not-allowed bg-gray-50 text-gray-300' : 'cursor-pointer bg-white hover:bg-gray-50 text-gray-500',
+                                open && !disabled && 'bg-gray-100',
+                              )}
+                              disabled={disabled}
+                            >
+                              <FolderUpload className={cn(
+                                'h-4 w-4',
+                                disabled ? 'text-gray-300' : 'text-gray-500',
+                              )}
+                              />
+                            </button>
+                          )
+                        }}
+                        listClassName='pl-1 pt-1'
                       />
                     </div>
                   )
@@ -260,19 +287,6 @@ const Chat: FC<IChatProps> = ({
                   <RiSendPlaneFill className='h-5 w-5' />
                 </button>
               </div>
-              {
-                visionConfig?.enabled && files.length > 0 && (
-                  <div className='pl-1'>
-                    <ImageList
-                      list={files}
-                      onRemove={onRemove}
-                      onReUpload={onReUpload}
-                      onImageLinkLoadSuccess={onImageLinkLoadSuccess}
-                      onImageLinkLoadError={onImageLinkLoadError}
-                    />
-                  </div>
-                )
-              }
             </div>
           </div>
         )
