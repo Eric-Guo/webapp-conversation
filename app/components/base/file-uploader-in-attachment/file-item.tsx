@@ -32,6 +32,8 @@ interface FileInAttachmentItemProps {
   onRemove?: (fileId: string) => void
   onReUpload?: (fileId: string) => void
   canPreview?: boolean
+  onImageLinkLoadSuccess?: () => void
+  onImageLinkLoadError?: () => void
 }
 const FileInAttachmentItem = ({
   file,
@@ -40,12 +42,23 @@ const FileInAttachmentItem = ({
   onRemove,
   onReUpload,
   canPreview,
+  onImageLinkLoadSuccess,
+  onImageLinkLoadError,
 }: FileInAttachmentItemProps) => {
   const { id, name, type, progress, supportFileType, base64Url, url, isRemote } = file
   const ext = getFileExtension(name, type, isRemote)
   const isImageFile = supportFileType === SupportUploadFileTypes.image
   const imageUrl = base64Url || url || ''
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
+
+  const handleImageLoad = () => {
+    if (file.transferMethod !== TransferMethod.remote_url || file.progress === -1) { return }
+    onImageLinkLoadSuccess?.()
+  }
+  const handleImageError = () => {
+    if (file.transferMethod !== TransferMethod.remote_url) { return }
+    onImageLinkLoadError?.()
+  }
   return (
     <>
       <div className={cn(
@@ -58,6 +71,8 @@ const FileInAttachmentItem = ({
               <FileImageRender
                 className='h-8 w-8'
                 imageUrl={imageUrl}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
             )
           }

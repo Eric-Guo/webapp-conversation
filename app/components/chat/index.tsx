@@ -275,6 +275,7 @@ const Chat: FC<IChatProps> = ({
                           }}
                           onHandleClipboardPasteFile={handleClipboardPasteReady}
                           variant='default'
+                          listDisplay={canUploadImages ? 'image' : 'file'}
                         />
                       </div>
                       <button

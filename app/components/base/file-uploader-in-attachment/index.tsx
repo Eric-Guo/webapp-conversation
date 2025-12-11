@@ -69,6 +69,9 @@ const FileUploaderInAttachment = ({
         base64Url: file.base64Url || file.url || '',
       }))
   }, [files])
+  const otherFiles = useMemo(() => {
+    return files.filter(file => file.supportFileType !== SupportUploadFileTypes.image)
+  }, [files])
   const showFromLocal = allowedUploadMethods.includes(TransferMethod.local_file)
   const showFromLink = allowedUploadMethods.includes(TransferMethod.remote_url)
   const hasUploadMethods = showFromLocal || showFromLink
@@ -76,6 +79,49 @@ const FileUploaderInAttachment = ({
   useEffect(() => {
     onHandleClipboardPasteFile?.(handleClipboardPasteFile)
   }, [handleClipboardPasteFile, onHandleClipboardPasteFile])
+
+  const renderFileItem = (file: FileEntity) => (
+    <FileItem
+      key={file.id}
+      file={file}
+      showDeleteAction
+      showDownloadAction={false}
+      canPreview={file.supportFileType === SupportUploadFileTypes.image}
+      onRemove={() => handleRemoveFile(file.id)}
+      onReUpload={() => handleReUploadFile(file.id)}
+      onImageLinkLoadSuccess={file.transferMethod === TransferMethod.remote_url && file.supportFileType === SupportUploadFileTypes.image
+        ? () => handleLoadFileFromLinkSuccess(file.id)
+        : undefined}
+      onImageLinkLoadError={file.transferMethod === TransferMethod.remote_url && file.supportFileType === SupportUploadFileTypes.image
+        ? () => handleLoadFileFromLinkError(file.id)
+        : undefined}
+    />
+  )
+
+  const renderFileList = () => {
+    if (listDisplay === 'image') {
+      return (
+        <>
+          {
+            imageFiles.length > 0 && (
+              <ImageList
+                list={imageFiles}
+                onRemove={handleRemoveFile}
+                onReUpload={handleReUploadFile}
+                onImageLinkLoadSuccess={handleLoadFileFromLinkSuccess}
+                onImageLinkLoadError={handleLoadFileFromLinkError}
+              />
+            )
+          }
+          {
+            otherFiles.map(file => renderFileItem(file))
+          }
+        </>
+      )
+    }
+
+    return files.map(file => renderFileItem(file))
+  }
 
   const renderCompactTrigger = useCallback((open: boolean) => {
     const disabled = !!(fileConfig.number_limits && files.length >= fileConfig.number_limits)
@@ -112,29 +158,7 @@ const FileUploaderInAttachment = ({
         {
           showList && files.length > 0 && (
             <div className={cn('mt-2 space-y-1', listClassName)}>
-              {listDisplay === 'image'
-                ? (
-                  <ImageList
-                    list={imageFiles}
-                    onRemove={handleRemoveFile}
-                    onReUpload={handleReUploadFile}
-                    onImageLinkLoadSuccess={handleLoadFileFromLinkSuccess}
-                    onImageLinkLoadError={handleLoadFileFromLinkError}
-                  />
-                )
-                : (
-                  files.map(file => (
-                    <FileItem
-                      key={file.id}
-                      file={file}
-                      showDeleteAction
-                      showDownloadAction={false}
-                      canPreview={file.supportFileType === SupportUploadFileTypes.image}
-                      onRemove={() => handleRemoveFile(file.id)}
-                      onReUpload={() => handleReUploadFile(file.id)}
-                    />
-                  ))
-                )}
+              {renderFileList()}
             </div>
           )
         }
@@ -156,31 +180,7 @@ const FileUploaderInAttachment = ({
         )
       }
       <div className='mt-1 space-y-1'>
-        {
-          listDisplay === 'image'
-            ? (
-              <ImageList
-                list={imageFiles}
-                onRemove={handleRemoveFile}
-                onReUpload={handleReUploadFile}
-                onImageLinkLoadSuccess={handleLoadFileFromLinkSuccess}
-                onImageLinkLoadError={handleLoadFileFromLinkError}
-              />
-            )
-            : (
-              files.map(file => (
-                <FileItem
-                  key={file.id}
-                  file={file}
-                  showDeleteAction
-                  showDownloadAction={false}
-                  canPreview={file.supportFileType === SupportUploadFileTypes.image}
-                  onRemove={() => handleRemoveFile(file.id)}
-                  onReUpload={() => handleReUploadFile(file.id)}
-                />
-              ))
-            )
-        }
+        {renderFileList()}
       </div>
     </div>
   )
