@@ -114,7 +114,7 @@ const Chat: FC<IChatProps> = ({
   const isImageUploadLimitReached = canUploadImages && !!(imageFileConfig?.number_limits && imageFiles.length >= imageFileConfig.number_limits)
   const canUploadAttachments = !!fileConfig?.enabled
   const isAttachmentLimitReached = canUploadAttachments && !!(fileConfig?.number_limits && attachmentFiles.length >= fileConfig.number_limits)
-  const isAttachmentButtonDisabled = (!canUploadImages || isImageUploadLimitReached) && (!canUploadAttachments || isAttachmentLimitReached)
+  const isAttachmentButtonDisabled = (!canUploadImages && !canUploadAttachments) || isImageUploadLimitReached || isAttachmentLimitReached
 
   const mergedFileConfig = React.useMemo<FileUpload | undefined>(() => {
     if (canUploadAttachments && canUploadImages && fileConfig && imageFileConfig) {
