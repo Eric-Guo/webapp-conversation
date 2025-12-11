@@ -116,7 +116,40 @@ const Chat: FC<IChatProps> = ({
   const isAttachmentLimitReached = canUploadAttachments && !!(fileConfig?.number_limits && attachmentFiles.length >= fileConfig.number_limits)
   const isAttachmentButtonDisabled = (!canUploadImages || isImageUploadLimitReached) && (!canUploadAttachments || isAttachmentLimitReached)
 
-  const mergedFileConfig = canUploadAttachments ? fileConfig : imageFileConfig
+  const mergedFileConfig = React.useMemo<FileUpload | undefined>(() => {
+    if (canUploadAttachments && canUploadImages && fileConfig && imageFileConfig) {
+      const allowedFileTypes = Array.from(new Set([
+        ...(fileConfig.allowed_file_types || []),
+        ...(imageFileConfig.allowed_file_types || []),
+      ]))
+      const allowedFileExtensions = Array.from(new Set([
+        ...(fileConfig.allowed_file_extensions || []),
+        ...(imageFileConfig.allowed_file_extensions || []),
+      ]))
+      const allowedFileUploadMethods = (() => {
+        const methods = [
+          ...(fileConfig.allowed_file_upload_methods || []),
+          ...(imageFileConfig.allowed_file_upload_methods || []),
+        ]
+        if (!methods.length) { return undefined }
+        if (methods.includes(TransferMethod.all)) { return [TransferMethod.local_file, TransferMethod.remote_url] }
+        return Array.from(new Set(methods))
+      })()
+
+      return {
+        ...fileConfig,
+        allowed_file_types: allowedFileTypes,
+        allowed_file_extensions: allowedFileExtensions,
+        allowed_file_upload_methods: allowedFileUploadMethods,
+        fileUploadConfig: {
+          ...(fileConfig.fileUploadConfig || {}),
+          image_file_size_limit: imageFileConfig.fileUploadConfig?.image_file_size_limit ?? fileConfig.fileUploadConfig?.image_file_size_limit,
+        },
+      }
+    }
+    if (canUploadAttachments) { return fileConfig }
+    return imageFileConfig
+  }, [canUploadAttachments, canUploadImages, fileConfig, imageFileConfig])
   useEffect(() => {
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
   }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
