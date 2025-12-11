@@ -100,10 +100,11 @@ export const getProcessedFiles = (files: FileEntity[]) => {
   return files
     .filter(file => file.progress !== -1)
     .map((fileItem) => {
+      const url = fileItem.url || (fileItem.transferMethod === TransferMethod.local_file ? fileItem.base64Url : '')
       const baseInfo = {
         type: fileItem.supportFileType,
         transfer_method: fileItem.transferMethod,
-        url: fileItem.url || '',
+        url: url || '',
       }
       if (fileItem.transferMethod === TransferMethod.remote_url) {
         return baseInfo
