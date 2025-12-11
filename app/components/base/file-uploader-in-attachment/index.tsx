@@ -6,10 +6,7 @@ import {
 import type { ClipboardEvent, ReactNode } from 'react'
 import {
   RiAttachmentLine,
-  RiLink,
-  RiUploadCloud2Line,
 } from '@remixicon/react'
-import { useTranslation } from 'react-i18next'
 import { useFile } from './hooks'
 import type { FileEntity, FileUpload } from './types'
 import { SupportUploadFileTypes } from './types'
@@ -18,19 +15,12 @@ import {
   FileContextProvider,
   useStore,
 } from './store'
-import FileInput from './file-input'
 import FileItem from './file-item'
-import Button from '@/app/components/base/button'
 import ImageList from '@/app/components/base/image-uploader/image-list'
 import cn from '@/utils/classnames'
 import type { ImageFile } from '@/types/app'
 import { TransferMethod } from '@/types/app'
 
-interface Option {
-  value: string
-  label: string
-  icon: JSX.Element
-}
 interface FileUploaderInAttachmentProps {
   fileConfig: FileUpload
   onHandleClipboardPasteFile?: (handle: (e: ClipboardEvent<HTMLTextAreaElement>) => void) => void
@@ -49,7 +39,6 @@ const FileUploaderInAttachment = ({
   showList = true,
   listDisplay = 'file',
 }: FileUploaderInAttachmentProps) => {
-  const { t } = useTranslation()
   const files = useStore(s => s.files)
   const {
     handleRemoveFile,
@@ -80,58 +69,13 @@ const FileUploaderInAttachment = ({
         base64Url: file.base64Url || file.url || '',
       }))
   }, [files])
-  const options = [
-    {
-      value: TransferMethod.local_file,
-      label: t('common.uploader.uploadFromComputer'),
-      icon: <RiUploadCloud2Line className='h-4 w-4' />,
-    },
-    {
-      value: TransferMethod.remote_url,
-      label: t('common.uploader.pasteFileLink'),
-      icon: <RiLink className='h-4 w-4' />,
-    },
-  ]
+  const showFromLocal = allowedUploadMethods.includes(TransferMethod.local_file)
+  const showFromLink = allowedUploadMethods.includes(TransferMethod.remote_url)
+  const hasUploadMethods = showFromLocal || showFromLink
 
   useEffect(() => {
     onHandleClipboardPasteFile?.(handleClipboardPasteFile)
   }, [handleClipboardPasteFile, onHandleClipboardPasteFile])
-
-  const renderButton = useCallback((option: Option, open?: boolean) => {
-    return (
-      <Button
-        key={option.value}
-        // variant='tertiary'
-        className={cn('relative grow', open && 'bg-components-button-tertiary-bg-hover')}
-        disabled={!!(fileConfig.number_limits && files.length >= fileConfig.number_limits)}
-      >
-        {option.icon}
-        <span className='ml-1'>{option.label}</span>
-        {
-          option.value === TransferMethod.local_file && (
-            <FileInput fileConfig={fileConfig} />
-          )
-        }
-      </Button>
-    )
-  }, [fileConfig, files.length])
-  const renderTrigger = useCallback((option: Option) => {
-    return (open: boolean) => renderButton(option, open)
-  }, [renderButton])
-  const renderOption = useCallback((option: Option) => {
-    if (option.value === TransferMethod.local_file && allowedUploadMethods.includes(TransferMethod.local_file)) { return renderButton(option) }
-
-    if (option.value === TransferMethod.remote_url && allowedUploadMethods.includes(TransferMethod.remote_url)) {
-      return (
-        <FileFromLinkOrLocal
-          key={option.value}
-          showFromLocal={false}
-          trigger={renderTrigger(option)}
-          fileConfig={fileConfig}
-        />
-      )
-    }
-  }, [renderButton, renderTrigger, allowedUploadMethods, fileConfig])
 
   const renderCompactTrigger = useCallback((open: boolean) => {
     const disabled = !!(fileConfig.number_limits && files.length >= fileConfig.number_limits)
@@ -156,11 +100,10 @@ const FileUploaderInAttachment = ({
     return (
       <div className='relative flex items-center'>
         {
-          (allowedUploadMethods.includes(TransferMethod.local_file)
-            || allowedUploadMethods.includes(TransferMethod.remote_url)) && (
+          hasUploadMethods && (
             <FileFromLinkOrLocal
-              showFromLocal={allowedUploadMethods.includes(TransferMethod.local_file)}
-              showFromLink={allowedUploadMethods.includes(TransferMethod.remote_url)}
+              showFromLocal={showFromLocal}
+              showFromLink={showFromLink}
               trigger={renderCompactTrigger}
               fileConfig={fileConfig}
             />
@@ -201,9 +144,17 @@ const FileUploaderInAttachment = ({
 
   return (
     <div>
-      <div className='flex items-center space-x-1'>
-        {options.map(renderOption)}
-      </div>
+      {
+        hasUploadMethods && (
+          <div className='flex justify-center'>
+            <FileFromLinkOrLocal
+              showFromLocal={showFromLocal}
+              showFromLink={showFromLink}
+              fileConfig={fileConfig}
+            />
+          </div>
+        )
+      }
       <div className='mt-1 space-y-1'>
         {
           listDisplay === 'image'

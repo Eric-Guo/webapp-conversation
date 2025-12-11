@@ -20,7 +20,7 @@ import cn from '@/utils/classnames'
 interface FileFromLinkOrLocalProps {
   showFromLink?: boolean
   showFromLocal?: boolean
-  trigger: (open: boolean) => React.ReactNode
+  trigger?: (open: boolean) => React.ReactNode
   fileConfig: FileUpload
 }
 const FileFromLinkOrLocal = ({
@@ -48,6 +48,73 @@ const FileFromLinkOrLocal = ({
     setUrl('')
   }
 
+  const content = (
+    <div className='w-[280px] rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur p-3 shadow-lg'>
+      {
+        showFromLink && (
+          <>
+            <div className={cn(
+              'flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active shadow-xs',
+              showError && 'border-components-input-border-destructive',
+            )}>
+              <input
+                className='system-sm-regular mr-0.5 block grow appearance-none bg-transparent px-1 outline-none'
+                placeholder={t('common.uploader.pasteFileLinkInputPlaceholder') || ''}
+                value={url}
+                onChange={(e) => {
+                  setShowError(false)
+                  setUrl(e.target.value.trim())
+                }}
+                disabled={disabled}
+              />
+              <Button
+                className='shrink-0 !h-7 !px-3 !py-0 text-xs font-medium leading-[18px]'
+                // size='small'
+                // variant='primary'
+                type='primary'
+                disabled={!url || disabled}
+                onClick={handleSaveUrl}
+              >
+                {t('common.operation.ok')}
+              </Button>
+            </div>
+            {
+              showError && (
+                <div className='body-xs-regular mt-0.5 text-text-destructive'>
+                  {t('common.uploader.pasteFileLinkInvalid')}
+                </div>
+              )
+            }
+          </>
+        )
+      }
+      {
+        showFromLink && showFromLocal && (
+          <div className='system-2xs-medium-uppercase flex h-7 items-center p-2 text-text-quaternary'>
+            <div className='mr-2 h-[1px] w-[93px] bg-gradient-to-l from-[rgba(16,24,40,0.08)]' />
+            OR
+            <div className='ml-2 h-[1px] w-[93px] bg-gradient-to-r from-[rgba(16,24,40,0.08)]' />
+          </div>
+        )
+      }
+      {
+        showFromLocal && (
+          <Button
+            className='relative w-full'
+            // variant='secondary-accent'
+            disabled={disabled}
+          >
+            <RiUploadCloud2Line className='mr-1 h-4 w-4' />
+            {t('common.uploader.uploadFromComputer')}
+            <FileInput fileConfig={fileConfig} />
+          </Button>
+        )
+      }
+    </div>
+  )
+
+  if (!trigger) { return content }
+
   return (
     <PortalToFollowElem
       placement='top'
@@ -59,68 +126,7 @@ const FileFromLinkOrLocal = ({
         {trigger(open)}
       </PortalToFollowElemTrigger>
       <PortalToFollowElemContent className='z-[1001]'>
-        <div className='w-[280px] rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur p-3 shadow-lg'>
-          {
-            showFromLink && (
-              <>
-                <div className={cn(
-                  'flex h-8 items-center rounded-lg border border-components-input-border-active bg-components-input-bg-active shadow-xs',
-                  showError && 'border-components-input-border-destructive',
-                )}>
-                  <input
-                    className='system-sm-regular mr-0.5 block grow appearance-none bg-transparent px-1 outline-none'
-                    placeholder={t('common.uploader.pasteFileLinkInputPlaceholder') || ''}
-                    value={url}
-                    onChange={(e) => {
-                      setShowError(false)
-                      setUrl(e.target.value.trim())
-                    }}
-                    disabled={disabled}
-                  />
-                  <Button
-                    className='shrink-0 !h-7 !px-3 !py-0 text-xs font-medium leading-[18px]'
-                    // size='small'
-                    // variant='primary'
-                    type='primary'
-                    disabled={!url || disabled}
-                    onClick={handleSaveUrl}
-                  >
-                    {t('common.operation.ok')}
-                  </Button>
-                </div>
-                {
-                  showError && (
-                    <div className='body-xs-regular mt-0.5 text-text-destructive'>
-                      {t('common.uploader.pasteFileLinkInvalid')}
-                    </div>
-                  )
-                }
-              </>
-            )
-          }
-          {
-            showFromLink && showFromLocal && (
-              <div className='system-2xs-medium-uppercase flex h-7 items-center p-2 text-text-quaternary'>
-                <div className='mr-2 h-[1px] w-[93px] bg-gradient-to-l from-[rgba(16,24,40,0.08)]' />
-                OR
-                <div className='ml-2 h-[1px] w-[93px] bg-gradient-to-r from-[rgba(16,24,40,0.08)]' />
-              </div>
-            )
-          }
-          {
-            showFromLocal && (
-              <Button
-                className='relative w-full'
-                // variant='secondary-accent'
-                disabled={disabled}
-              >
-                <RiUploadCloud2Line className='mr-1 h-4 w-4' />
-                {t('common.uploader.uploadFromComputer')}
-                <FileInput fileConfig={fileConfig} />
-              </Button>
-            )
-          }
-        </div>
+        {content}
       </PortalToFollowElemContent>
     </PortalToFollowElem>
   )
