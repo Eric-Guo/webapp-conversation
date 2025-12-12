@@ -193,6 +193,7 @@
 .markdown-body [type="button"],
 .markdown-body [type="reset"],
 .markdown-body [type="submit"] {
+  appearance: button;
   -webkit-appearance: button;
 }
 
