@@ -7,6 +7,12 @@ const translation = {
   chat: {
     newChat: 'Nuevo chat',
     newChatDefaultName: 'Nueva conversación',
+    rename: 'Renombrar',
+    renameConversation: 'Renombrar conversación',
+    conversationName: 'Nombre de la conversación',
+    conversationNamePlaceholder: 'Ingresa un nombre de conversación',
+    conversationNameRequired: 'El nombre de la conversación no puede estar vacío',
+    renameConversationFailed: 'Error al renombrar la conversación',
     openingStatementTitle: 'Frase de apertura',
     powerBy: 'Desarrollado por',
     prompt: 'Prompt',

@@ -7,6 +7,12 @@ const translation = {
   chat: {
     newChat: 'Cuộc trò chuyện mới',
     newChatDefaultName: 'Cuộc trò chuyện mới',
+    rename: 'Đổi tên',
+    renameConversation: 'Đổi tên cuộc trò chuyện',
+    conversationName: 'Tên cuộc trò chuyện',
+    conversationNamePlaceholder: 'Nhập tên cuộc trò chuyện',
+    conversationNameRequired: 'Tên cuộc trò chuyện không được để trống',
+    renameConversationFailed: 'Đổi tên cuộc trò chuyện thất bại',
     openingStatementTitle: 'Lời mở đầu',
     powerBy: 'Được hỗ trợ bởi',
     prompt: 'Nhắc nhở',

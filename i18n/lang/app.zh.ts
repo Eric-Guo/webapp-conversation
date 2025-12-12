@@ -7,6 +7,12 @@ const translation = {
   chat: {
     newChat: '新对话',
     newChatDefaultName: '新的对话',
+    rename: '重命名',
+    renameConversation: '重命名对话',
+    conversationName: '对话名称',
+    conversationNamePlaceholder: '请输入对话名称',
+    conversationNameRequired: '对话名称不能为空',
+    renameConversationFailed: '重命名对话失败',
     openingStatementTitle: '对话开场白',
     powerBy: 'Powered by',
     prompt: '提示词',

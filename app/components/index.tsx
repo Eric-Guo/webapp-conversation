@@ -11,7 +11,7 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, sendChatMessage, updateFeedback } from '@/service'
+import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, renameConversation, sendChatMessage, updateFeedback } from '@/service'
 import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
@@ -701,6 +701,30 @@ const Main: FC<IMainProps> = () => {
     })
   }
 
+  const handleRenameConversation = async (id: string, newName: string) => {
+    const trimmedName = newName.trim()
+    if (!trimmedName) {
+      notify({ type: 'error', message: t('app.chat.conversationNameRequired') })
+      return
+    }
+    try {
+      await renameConversation(id, trimmedName)
+      setConversationList(produce(conversationList, (draft) => {
+        const index = draft.findIndex(item => item.id === id)
+        if (index !== -1)
+        { draft[index].name = trimmedName }
+      }))
+      if (currConversationId === id && !isNewConversation)
+      { setExistConversationInfo(prev => prev ? { ...prev, name: trimmedName } : prev) }
+
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.renameConversationFailed') })
+      throw error
+    }
+  }
+
   const handleFeedback = async (messageId: string, feedback: Feedbacktype) => {
     await updateFeedback({ url: `/messages/${messageId}/feedbacks`, body: { rating: feedback.rating } })
     const newChatList = chatList.map((item) => {
@@ -725,6 +749,7 @@ const Main: FC<IMainProps> = () => {
         currentId={currConversationId}
         copyRight={APP_INFO.copyright || APP_INFO.title}
         conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        onRenameConversation={handleRenameConversation}
       />
     )
   }

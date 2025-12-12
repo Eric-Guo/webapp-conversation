@@ -7,6 +7,12 @@ const translation = {
   chat: {
     newChat: '新しいチャット',
     newChatDefaultName: '新しい会話',
+    rename: '名前を変更',
+    renameConversation: '会話名を変更',
+    conversationName: '会話名',
+    conversationNamePlaceholder: '会話名を入力してください',
+    conversationNameRequired: '会話名を空にすることはできません',
+    renameConversationFailed: '会話名の変更に失敗しました',
     openingStatementTitle: 'オープニングステートメント',
     powerBy: '提供元',
     prompt: 'プロンプト',
