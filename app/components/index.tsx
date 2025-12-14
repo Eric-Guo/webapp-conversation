@@ -1,6 +1,6 @@
 'use client'
 import type { FC } from 'react'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import produce, { setAutoFreeze } from 'immer'
 import { useBoolean, useGetState } from 'ahooks'
@@ -11,7 +11,7 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, renameConversation, sendChatMessage, updateFeedback } from '@/service'
+import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
 import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
@@ -118,6 +118,30 @@ const Main: FC<IMainProps> = () => {
   })()
 
   const conversationName = currConversationInfo?.name || t('app.chat.newChatDefaultName') as string
+  const normalizeConversations = useCallback((pinned: ConversationItem[] = [], unpinned: ConversationItem[] = []) => {
+    return [
+      ...pinned.map(item => ({ ...item, pinned: true })),
+      ...unpinned.map(item => ({ ...item, pinned: false })),
+    ]
+  }, [])
+  const loadConversationData = useCallback(async () => {
+    const [pinnedResponse, unpinnedResponse] = await Promise.all([
+      fetchConversations(userPrefix, true),
+      fetchConversations(userPrefix, false),
+    ])
+    return { pinnedResponse, unpinnedResponse }
+  }, [userPrefix])
+  const refreshConversationList = useCallback(async () => {
+    const { pinnedResponse, unpinnedResponse } = await loadConversationData()
+    const error = (pinnedResponse as any)?.error || (unpinnedResponse as any)?.error
+    if (error) { throw new Error(error) }
+    const mergedList = normalizeConversations(
+      (pinnedResponse as any)?.data || [],
+      (unpinnedResponse as any)?.data || [],
+    )
+    setConversationList(mergedList as ConversationItem[])
+    return mergedList as ConversationItem[]
+  }, [loadConversationData, normalizeConversations, setConversationList])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -177,6 +201,7 @@ const Main: FC<IMainProps> = () => {
         inputs: newConversationInputs,
         introduction: conversationIntroduction,
         suggested_questions: suggestedQuestions,
+        pinned: false,
       })
     }))
     return true
@@ -290,14 +315,18 @@ const Main: FC<IMainProps> = () => {
     }
     (async () => {
       try {
-        const [conversationData, appParams] = await Promise.all([fetchConversations(userPrefix), fetchAppParams()])
-        // handle current conversation id
-        const { data: conversations, error } = conversationData as { data: ConversationItem[], error?: string }
+        const [{ pinnedResponse, unpinnedResponse }, appParams] = await Promise.all([loadConversationData(), fetchAppParams()])
+        const pinnedError = (pinnedResponse as any)?.error
+        const unpinnedError = (unpinnedResponse as any)?.error
+        const error = pinnedError || unpinnedError
         if (error) {
           Toast.notify({ type: 'error', message: error })
           throw new Error(error)
-          return
         }
+        const conversations = normalizeConversations(
+          (pinnedResponse as any)?.data || [],
+          (unpinnedResponse as any)?.data || [],
+        )
         const _conversationId = getConversationIdFromStorage(APP_ID)
         const currentConversation = conversations.find(item => item.id === _conversationId)
         const isNotNewConversation = !!currentConversation
@@ -352,7 +381,7 @@ const Main: FC<IMainProps> = () => {
         }
       }
     })()
-  }, [hasSetAppConfig, isAuthenticated, userPrefix])
+  }, [hasSetAppConfig, isAuthenticated, loadConversationData, normalizeConversations, userPrefix])
 
   const [isResponding, { setTrue: setRespondingTrue, setFalse: setRespondingFalse }] = useBoolean(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
@@ -540,14 +569,21 @@ const Main: FC<IMainProps> = () => {
         if (hasError) { return }
 
         if (getConversationIdChangeBecauseOfNew()) {
-          const conversationsResponse: any = await fetchConversations(userPrefix)
-          const { data: allConversations } = conversationsResponse
-          const newItem: any = await generationConversationName(allConversations[0].id)
-
-          const newAllConversations = produce(allConversations, (draft: any) => {
-            draft[0].name = newItem.name
-          })
-          setConversationList(newAllConversations as any)
+          try {
+            const conversations = await refreshConversationList()
+            const targetConversationId = tempNewConversationId || conversations[0]?.id
+            if (targetConversationId) {
+              const newItem: any = await generationConversationName(targetConversationId)
+              setConversationList(produce(conversations, (draft: any) => {
+                const index = draft.findIndex(item => item.id === targetConversationId)
+                if (index !== -1)
+                { draft[index].name = newItem.name }
+              }) as any)
+            }
+          }
+          catch (error: any) {
+            notify({ type: 'error', message: error?.message || t('app.chat.renameConversationFailed') })
+          }
         }
         setConversationIdChangeBecauseOfNew(false)
         resetNewConversationInputs()
@@ -725,6 +761,28 @@ const Main: FC<IMainProps> = () => {
     }
   }
 
+  const handlePinConversation = async (id: string) => {
+    try {
+      await pinConversation(id)
+      await refreshConversationList()
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.pinConversationFailed') })
+    }
+  }
+
+  const handleUnpinConversation = async (id: string) => {
+    try {
+      await unpinConversation(id)
+      await refreshConversationList()
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.unpinConversationFailed') })
+    }
+  }
+
   const handleFeedback = async (messageId: string, feedback: Feedbacktype) => {
     await updateFeedback({ url: `/messages/${messageId}/feedbacks`, body: { rating: feedback.rating } })
     const newChatList = chatList.map((item) => {
@@ -750,6 +808,8 @@ const Main: FC<IMainProps> = () => {
         copyRight={APP_INFO.copyright || APP_INFO.title}
         conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
         onRenameConversation={handleRenameConversation}
+        onPinConversation={handlePinConversation}
+        onUnpinConversation={handleUnpinConversation}
       />
     )
   }

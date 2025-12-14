@@ -105,6 +105,8 @@ export interface ConversationItem {
   introduction: string
   suggested_questions?: string[]
   created_at?: number
+  updated_at?: number
+  pinned?: boolean
 }
 
 export interface AppInfo {

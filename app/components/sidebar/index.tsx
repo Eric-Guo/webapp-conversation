@@ -9,6 +9,8 @@ import {
 import { ChatBubbleOvalLeftEllipsisIcon as ChatBubbleOvalLeftEllipsisSolidIcon } from '@heroicons/react/24/solid'
 import {
   RiEditLine,
+  RiPushpinLine,
+  RiUnpinLine,
   RiMoreFill,
 } from '@remixicon/react'
 import Button from '@/app/components/base/button'
@@ -28,6 +30,11 @@ interface ConversationActionsProps {
   isShowRenameConversation?: boolean
   onRenameConversation: () => void
   renameLabel: string
+  isPinned?: boolean
+  onPinConversation?: () => void
+  onUnpinConversation?: () => void
+  pinLabel: string
+  unpinLabel: string
 }
 
 const ConversationActions: FC<ConversationActionsProps> = ({
@@ -36,6 +43,11 @@ const ConversationActions: FC<ConversationActionsProps> = ({
   isShowRenameConversation,
   onRenameConversation,
   renameLabel,
+  isPinned,
+  onPinConversation,
+  onUnpinConversation,
+  pinLabel,
+  unpinLabel,
 }) => {
   const [open, setOpen] = useState(false)
   const [isHovering, { setTrue: setIsHovering, setFalse: setNotHovering }] = useBoolean(false)
@@ -45,8 +57,10 @@ const ConversationActions: FC<ConversationActionsProps> = ({
     { setOpen(false) }
   }, [isItemHovering, isHovering])
 
-  if (!isShowRenameConversation)
-  { return null }
+  const canPin = isPinned ? !!onUnpinConversation : !!onPinConversation
+  const canRename = isShowRenameConversation && !!onRenameConversation
+
+  if (!canPin && !canRename) { return null }
 
   return (
     <PortalToFollowElem
@@ -80,16 +94,35 @@ const ConversationActions: FC<ConversationActionsProps> = ({
             e.stopPropagation()
           }}
         >
-          <div
-            className='flex cursor-pointer items-center space-x-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100'
-            onClick={() => {
-              setOpen(false)
-              onRenameConversation()
-            }}
-          >
-            <RiEditLine className='h-4 w-4 shrink-0 text-gray-500' />
-            <span className='grow'>{renameLabel}</span>
-          </div>
+          {canPin && (
+            <div
+              className='flex cursor-pointer items-center space-x-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100'
+              onClick={() => {
+                setOpen(false)
+                if (isPinned)
+                { onUnpinConversation?.() }
+                else
+                { onPinConversation?.() }
+              }}
+            >
+              {isPinned
+                ? <RiUnpinLine className='h-4 w-4 shrink-0 text-gray-500' />
+                : <RiPushpinLine className='h-4 w-4 shrink-0 text-gray-500' />}
+              <span className='grow'>{isPinned ? unpinLabel : pinLabel}</span>
+            </div>
+          )}
+          {canRename && (
+            <div
+              className='flex cursor-pointer items-center space-x-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100'
+              onClick={() => {
+                setOpen(false)
+                onRenameConversation()
+              }}
+            >
+              <RiEditLine className='h-4 w-4 shrink-0 text-gray-500' />
+              <span className='grow'>{renameLabel}</span>
+            </div>
+          )}
         </div>
       </PortalToFollowElemContent>
     </PortalToFollowElem>
@@ -104,6 +137,8 @@ export interface ISidebarProps {
   conversationLimit?: number | null
   onRenameConversation?: (id: string, newName: string) => Promise<void> | void
   isShowRenameConversation?: boolean
+  onPinConversation?: (id: string) => Promise<void> | void
+  onUnpinConversation?: (id: string) => Promise<void> | void
 }
 
 const Sidebar: FC<ISidebarProps> = ({
@@ -114,10 +149,20 @@ const Sidebar: FC<ISidebarProps> = ({
   conversationLimit,
   onRenameConversation,
   isShowRenameConversation = true,
+  onPinConversation,
+  onUnpinConversation,
 }) => {
   const { t } = useTranslation()
   const todayConversationCount = React.useMemo(
     () => list.filter(item => isTimestampToday(item.created_at)).length,
+    [list],
+  )
+  const pinnedList = React.useMemo(
+    () => list.filter(item => item.pinned),
+    [list],
+  )
+  const unpinnedList = React.useMemo(
+    () => list.filter(item => !item.pinned),
     [list],
   )
   const maxConversationsToday = conversationLimit ?? Infinity
@@ -157,6 +202,61 @@ const Sidebar: FC<ISidebarProps> = ({
     }
   }
 
+  const renderConversation = (item: ConversationItem) => {
+    const isCurrent = item.id === currentId
+    const ItemIcon
+      = isCurrent ? ChatBubbleOvalLeftEllipsisSolidIcon : ChatBubbleOvalLeftEllipsisIcon
+    const hasPinAction = item.id !== '-1' && (item.pinned ? !!onUnpinConversation : !!onPinConversation)
+    const hasRenameAction = isShowRenameConversation && item.id !== '-1' && !!onRenameConversation
+    const showActions = item.id !== '-1' && (hasPinAction || hasRenameAction)
+
+    return (
+      <div
+        onMouseEnter={() => setHoverId(item.id)}
+        onMouseLeave={() => setHoverId('')}
+        onClick={() => onCurrentIdChange(item.id)}
+        key={item.id}
+        className={classNames(
+          isCurrent
+            ? 'bg-primary-50 text-primary-600'
+            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
+          'group flex items-center rounded-md px-2 py-2 text-sm font-medium cursor-pointer',
+        )}
+      >
+        <ItemIcon
+          className={classNames(
+            isCurrent
+              ? 'text-primary-600'
+              : 'text-gray-400 group-hover:text-gray-500',
+            'mr-3 h-5 w-5 flex-shrink-0',
+          )}
+          aria-hidden="true"
+        />
+        <span className='truncate'>{item.name}</span>
+        {showActions && (
+          <div className='ml-auto pl-2' onClick={e => e.stopPropagation()}>
+            <ConversationActions
+              isActive={isCurrent}
+              isItemHovering={hoverId === item.id}
+              isShowRenameConversation={hasRenameAction}
+              renameLabel={t('app.chat.rename') as string}
+              isPinned={!!item.pinned}
+              onPinConversation={!item.pinned && onPinConversation ? () => onPinConversation(item.id) : undefined}
+              onUnpinConversation={item.pinned && onUnpinConversation ? () => onUnpinConversation(item.id) : undefined}
+              pinLabel={t('app.chat.pin') as string}
+              unpinLabel={t('app.chat.unpin') as string}
+              onRenameConversation={() => {
+                setRenameTarget(item)
+                setRenameValue(item.name)
+                setRenameError('')
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className="shrink-0 flex flex-col overflow-y-auto bg-white pc:w-[306px] tablet:w-[192px] mobile:w-[240px]  border-r border-gray-200 tablet:h-[calc(100vh_-_3rem)] mobile:h-screen"
@@ -172,53 +272,29 @@ const Sidebar: FC<ISidebarProps> = ({
         </div>
       )}
 
-      <nav className="mt-4 flex-1 space-y-1 bg-white p-4 !pt-0">
-        {list.map((item) => {
-          const isCurrent = item.id === currentId
-          const ItemIcon
-            = isCurrent ? ChatBubbleOvalLeftEllipsisSolidIcon : ChatBubbleOvalLeftEllipsisIcon
-          const showActions = isShowRenameConversation && item.id !== '-1' && !!onRenameConversation
-          return (
-            <div
-              onMouseEnter={() => setHoverId(item.id)}
-              onMouseLeave={() => setHoverId('')}
-              onClick={() => onCurrentIdChange(item.id)}
-              key={item.id}
-              className={classNames(
-                isCurrent
-                  ? 'bg-primary-50 text-primary-600'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
-                'group flex items-center rounded-md px-2 py-2 text-sm font-medium cursor-pointer',
-              )}
-            >
-              <ItemIcon
-                className={classNames(
-                  isCurrent
-                    ? 'text-primary-600'
-                    : 'text-gray-400 group-hover:text-gray-500',
-                  'mr-3 h-5 w-5 flex-shrink-0',
-                )}
-                aria-hidden="true"
-              />
-              <span className='truncate'>{item.name}</span>
-              {showActions && (
-                <div className='ml-auto pl-2' onClick={e => e.stopPropagation()}>
-                  <ConversationActions
-                    isActive={isCurrent}
-                    isItemHovering={hoverId === item.id}
-                    isShowRenameConversation={isShowRenameConversation}
-                    renameLabel={t('app.chat.rename') as string}
-                    onRenameConversation={() => {
-                      setRenameTarget(item)
-                      setRenameValue(item.name)
-                      setRenameError('')
-                    }}
-                  />
-                </div>
-              )}
+      <nav className="mt-4 flex-1 space-y-3 bg-white p-4 !pt-0">
+        {!!pinnedList.length && (
+          <div className='space-y-1'>
+            <div className='px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400'>
+              {t('app.chat.pinned')}
             </div>
-          )
-        })}
+            <div className='space-y-1'>
+              {pinnedList.map(item => renderConversation(item))}
+            </div>
+          </div>
+        )}
+        {!!unpinnedList.length && (
+          <div className='space-y-1'>
+            {pinnedList.length > 0 && (
+              <div className='px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400'>
+                {t('app.chat.unpinned')}
+              </div>
+            )}
+            <div className='space-y-1'>
+              {unpinnedList.map(item => renderConversation(item))}
+            </div>
+          </div>
+        )}
       </nav>
       {/* <a className="flex flex-shrink-0 p-4" href="https://langgenius.ai/" target="_blank">
         <Card><div className="flex flex-row items-center"><ChatBubbleOvalLeftEllipsisSolidIcon className="text-primary-600 h-6 w-6 mr-2" /><span>LangGenius</span></div></Card>

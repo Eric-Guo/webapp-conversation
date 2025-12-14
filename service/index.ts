@@ -1,5 +1,5 @@
 import type { IOnCompleted, IOnData, IOnError, IOnFile, IOnMessageEnd, IOnMessageReplace, IOnNodeFinished, IOnNodeStarted, IOnThought, IOnWorkflowFinished, IOnWorkflowStarted } from './base'
-import { get, post, ssePost } from './base'
+import { get, patch, post, ssePost } from './base'
 import type { Feedbacktype } from '@/types/app'
 
 export const sendChatMessage = async (
@@ -40,9 +40,10 @@ export const sendChatMessage = async (
   }, { onData, onCompleted, onThought, onFile, onError, getAbortController, onMessageEnd, onMessageReplace, onNodeStarted, onWorkflowStarted, onWorkflowFinished, onNodeFinished })
 }
 
-export const fetchConversations = async (userPrefix?: string) => {
+export const fetchConversations = async (userPrefix?: string, pinned?: boolean) => {
   const params: Record<string, any> = { limit: 100, first_id: '' }
   if (userPrefix) { params.user = userPrefix }
+  if (pinned !== undefined) { params.pinned = pinned }
   return get('conversations', { params })
 }
 
@@ -65,4 +66,12 @@ export const renameConversation = async (id: string, name: string) => {
 
 export const generationConversationName = async (id: string) => {
   return post(`conversations/${id}/name`, { body: { auto_generate: true } })
+}
+
+export const pinConversation = async (id: string) => {
+  return patch(`conversations/${id}/pin`)
+}
+
+export const unpinConversation = async (id: string) => {
+  return patch(`conversations/${id}/unpin`)
 }
