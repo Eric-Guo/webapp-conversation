@@ -170,7 +170,7 @@ const Chat: FC<IChatProps> = ({
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
   }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
 
-  const handleSend = () => {
+  const handleSendMessage = () => {
     if (isSendButtonDisabled) { return }
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
     const imageFilePayloads: VisionFile[] = getProcessedFiles(imageFiles)
@@ -193,7 +193,7 @@ const Chat: FC<IChatProps> = ({
     if (e.code === 'Enter') {
       e.preventDefault()
       // prevent send message when using input method enter
-      if (!e.shiftKey && !isUseInputMethod.current) { handleSend() }
+      if (!e.shiftKey && !isUseInputMethod.current) { handleSendMessage() }
     }
   }
 
@@ -211,7 +211,7 @@ const Chat: FC<IChatProps> = ({
     if (isSendButtonDisabled) { return }
     setQuery(suggestion)
     queryRef.current = suggestion
-    handleSend()
+    handleSendMessage()
   }
 
   const getImageUrls = (files: VisionFile[] | undefined, belongsTo: 'user' | 'assistant') => {
@@ -318,7 +318,7 @@ const Chat: FC<IChatProps> = ({
                     'self-center flex h-10 w-10 items-center justify-center rounded-full',
                     isSendButtonDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1a73e8] text-white shadow-md hover:bg-[#1669d0] active:bg-[#125cb8]',
                   )}
-                  onClick={handleSend}
+                  onClick={handleSendMessage}
                   aria-label={t('common.operation.send')}
                   disabled={isSendButtonDisabled}
                 >
