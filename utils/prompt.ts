@@ -49,6 +49,15 @@ export const userInputsFormToPromptVariables = (useInputs: UserInputFormItem[] |
         options: [],
       })
     }
+    else if (type === 'checkbox') {
+      promptVariables.push({
+        key: content.variable,
+        name: content.label,
+        required: content.required,
+        type: 'checkbox',
+        options: [],
+      })
+    }
     else {
       promptVariables.push({
         key: content.variable,
