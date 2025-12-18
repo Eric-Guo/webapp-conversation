@@ -38,7 +38,7 @@ const translation = {
     conversationLimitReached: '已达今日对话上限 ({{limit}})。',
   },
   variableTable: {
-    optional: '可选',
+    optional: '(可选)',
   },
 }
 
