@@ -124,24 +124,26 @@ const Main: FC<IMainProps> = () => {
       ...unpinned.map(item => ({ ...item, pinned: false })),
     ]
   }, [])
+  const mergeConversationData = useCallback((pinnedResponse: any, unpinnedResponse: any) => normalizeConversations(
+    (pinnedResponse as any)?.data || [],
+    (unpinnedResponse as any)?.data || [],
+  ), [normalizeConversations])
   const loadConversationData = useCallback(async () => {
     const [pinnedResponse, unpinnedResponse] = await Promise.all([
       fetchConversations(userPrefix, true),
       fetchConversations(userPrefix, false),
     ])
-    return { pinnedResponse, unpinnedResponse }
-  }, [userPrefix])
+    const conversations = mergeConversationData(pinnedResponse, unpinnedResponse)
+
+    return { pinnedResponse, unpinnedResponse, conversations }
+  }, [mergeConversationData, userPrefix])
   const refreshConversationList = useCallback(async () => {
-    const { pinnedResponse, unpinnedResponse } = await loadConversationData()
+    const { pinnedResponse, unpinnedResponse, conversations } = await loadConversationData()
     const error = (pinnedResponse as any)?.error || (unpinnedResponse as any)?.error
     if (error) { throw new Error(error) }
-    const mergedList = normalizeConversations(
-      (pinnedResponse as any)?.data || [],
-      (unpinnedResponse as any)?.data || [],
-    )
-    setConversationList(mergedList as ConversationItem[])
-    return mergedList as ConversationItem[]
-  }, [loadConversationData, normalizeConversations, setConversationList])
+    setConversationList(conversations as ConversationItem[])
+    return conversations as ConversationItem[]
+  }, [loadConversationData, setConversationList])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -315,7 +317,7 @@ const Main: FC<IMainProps> = () => {
     }
     (async () => {
       try {
-        const [{ pinnedResponse, unpinnedResponse }, appParams] = await Promise.all([loadConversationData(), fetchAppParams()])
+        const [{ pinnedResponse, unpinnedResponse, conversations }, appParams] = await Promise.all([loadConversationData(), fetchAppParams()])
         const pinnedError = (pinnedResponse as any)?.error
         const unpinnedError = (unpinnedResponse as any)?.error
         const error = pinnedError || unpinnedError
@@ -323,10 +325,6 @@ const Main: FC<IMainProps> = () => {
           Toast.notify({ type: 'error', message: error })
           throw new Error(error)
         }
-        const conversations = normalizeConversations(
-          (pinnedResponse as any)?.data || [],
-          (unpinnedResponse as any)?.data || [],
-        )
         const _conversationId = getConversationIdFromStorage(APP_ID)
         const currentConversation = conversations.find(item => item.id === _conversationId)
         const isNotNewConversation = !!currentConversation
