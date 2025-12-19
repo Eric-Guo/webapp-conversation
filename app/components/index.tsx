@@ -11,7 +11,7 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
+import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
 import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
@@ -781,6 +781,38 @@ const Main: FC<IMainProps> = () => {
     }
   }
 
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      await deleteConversation(id)
+      const isCurrent = currConversationId === id
+      setConversationList((prev) => {
+        const next = prev.filter(item => item.id !== id)
+        if (isCurrent && !next.some(item => item.id === '-1')) {
+          next.unshift({
+            id: '-1',
+            name: t('app.chat.newChatDefaultName'),
+            inputs: newConversationInputs,
+            introduction: conversationIntroduction,
+            suggested_questions: suggestedQuestions,
+            pinned: false,
+          })
+        }
+        return next
+      })
+      if (isCurrent) {
+        setConversationIdChangeBecauseOfNew(true)
+        setShouldAutoStartNewChat(true)
+        setChatNotStarted()
+        setCurrConversationId('-1', APP_ID)
+      }
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.deleteConversationFailed') })
+      throw error
+    }
+  }
+
   const handleFeedback = async (messageId: string, feedback: Feedbacktype) => {
     await updateFeedback({ url: `/messages/${messageId}/feedbacks`, body: { rating: feedback.rating } })
     const newChatList = chatList.map((item) => {
@@ -808,6 +840,7 @@ const Main: FC<IMainProps> = () => {
         onRenameConversation={handleRenameConversation}
         onPinConversation={handlePinConversation}
         onUnpinConversation={handleUnpinConversation}
+        onDeleteConversation={handleDeleteConversation}
       />
     )
   }

@@ -1,5 +1,5 @@
 import type { IOnCompleted, IOnData, IOnError, IOnFile, IOnMessageEnd, IOnMessageReplace, IOnNodeFinished, IOnNodeStarted, IOnThought, IOnWorkflowFinished, IOnWorkflowStarted } from './base'
-import { get, patch, post, ssePost } from './base'
+import { del, get, patch, post, ssePost } from './base'
 import type { Feedbacktype } from '@/types/app'
 
 export const sendChatMessage = async (
@@ -74,4 +74,8 @@ export const pinConversation = async (id: string) => {
 
 export const unpinConversation = async (id: string) => {
   return patch(`conversations/${id}/unpin`)
+}
+
+export const deleteConversation = async (id: string) => {
+  return del(`conversations/${id}`)
 }

@@ -12,6 +12,7 @@ import {
   RiPushpinLine,
   RiUnpinLine,
   RiMoreFill,
+  RiDeleteBinLine,
 } from '@remixicon/react'
 import Button from '@/app/components/base/button'
 import ActionButton, { ActionButtonState } from '@/app/components/base/action-button'
@@ -30,9 +31,11 @@ interface ConversationActionsProps {
   isShowRenameConversation?: boolean
   onRenameConversation: () => void
   renameLabel: string
+  deleteLabel: string
   isPinned?: boolean
   onPinConversation?: () => void
   onUnpinConversation?: () => void
+  onDeleteConversation?: () => void
   pinLabel: string
   unpinLabel: string
 }
@@ -43,9 +46,11 @@ const ConversationActions: FC<ConversationActionsProps> = ({
   isShowRenameConversation,
   onRenameConversation,
   renameLabel,
+  deleteLabel,
   isPinned,
   onPinConversation,
   onUnpinConversation,
+  onDeleteConversation,
   pinLabel,
   unpinLabel,
 }) => {
@@ -59,8 +64,9 @@ const ConversationActions: FC<ConversationActionsProps> = ({
 
   const canPin = isPinned ? !!onUnpinConversation : !!onPinConversation
   const canRename = isShowRenameConversation && !!onRenameConversation
+  const canDelete = !!onDeleteConversation
 
-  if (!canPin && !canRename) { return null }
+  if (!canPin && !canRename && !canDelete) { return null }
 
   return (
     <PortalToFollowElem
@@ -123,6 +129,18 @@ const ConversationActions: FC<ConversationActionsProps> = ({
               <span className='grow'>{renameLabel}</span>
             </div>
           )}
+          {canDelete && (
+            <div
+              className='flex cursor-pointer items-center space-x-2 rounded-lg px-2 py-1.5 text-sm text-red-600 hover:bg-red-50'
+              onClick={() => {
+                setOpen(false)
+                onDeleteConversation?.()
+              }}
+            >
+              <RiDeleteBinLine className='h-4 w-4 shrink-0 text-red-500' />
+              <span className='grow'>{deleteLabel}</span>
+            </div>
+          )}
         </div>
       </PortalToFollowElemContent>
     </PortalToFollowElem>
@@ -139,6 +157,7 @@ export interface ISidebarProps {
   isShowRenameConversation?: boolean
   onPinConversation?: (id: string) => Promise<void> | void
   onUnpinConversation?: (id: string) => Promise<void> | void
+  onDeleteConversation?: (id: string) => Promise<void> | void
 }
 
 const Sidebar: FC<ISidebarProps> = ({
@@ -151,6 +170,7 @@ const Sidebar: FC<ISidebarProps> = ({
   isShowRenameConversation = true,
   onPinConversation,
   onUnpinConversation,
+  onDeleteConversation,
 }) => {
   const { t } = useTranslation()
   const todayConversationCount = React.useMemo(
@@ -172,6 +192,8 @@ const Sidebar: FC<ISidebarProps> = ({
   const [renameError, setRenameError] = useState('')
   const [renaming, setRenaming] = useState(false)
   const [hoverId, setHoverId] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ConversationItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const closeRenameModal = () => {
     setRenameTarget(null)
@@ -202,13 +224,31 @@ const Sidebar: FC<ISidebarProps> = ({
     }
   }
 
+  const closeDeleteModal = () => {
+    if (deleting) { return }
+    setDeleteTarget(null)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget || !onDeleteConversation || deleting) { return }
+    setDeleting(true)
+    try {
+      await onDeleteConversation(deleteTarget.id)
+      setDeleteTarget(null)
+    }
+    finally {
+      setDeleting(false)
+    }
+  }
+
   const renderConversation = (item: ConversationItem) => {
     const isCurrent = item.id === currentId
     const ItemIcon
       = isCurrent ? ChatBubbleOvalLeftEllipsisSolidIcon : ChatBubbleOvalLeftEllipsisIcon
     const hasPinAction = item.id !== '-1' && (item.pinned ? !!onUnpinConversation : !!onPinConversation)
     const hasRenameAction = isShowRenameConversation && item.id !== '-1' && !!onRenameConversation
-    const showActions = item.id !== '-1' && (hasPinAction || hasRenameAction)
+    const hasDeleteAction = item.id !== '-1' && !!onDeleteConversation
+    const showActions = item.id !== '-1' && (hasPinAction || hasRenameAction || hasDeleteAction)
 
     return (
       <div
@@ -240,11 +280,13 @@ const Sidebar: FC<ISidebarProps> = ({
               isItemHovering={hoverId === item.id}
               isShowRenameConversation={hasRenameAction}
               renameLabel={t('app.chat.rename') as string}
+              deleteLabel={t('app.chat.delete') as string}
               isPinned={!!item.pinned}
               onPinConversation={!item.pinned && onPinConversation ? () => onPinConversation(item.id) : undefined}
               onUnpinConversation={item.pinned && onUnpinConversation ? () => onUnpinConversation(item.id) : undefined}
               pinLabel={t('app.chat.pin') as string}
               unpinLabel={t('app.chat.unpin') as string}
+              onDeleteConversation={hasDeleteAction ? () => setDeleteTarget(item) : undefined}
               onRenameConversation={() => {
                 setRenameTarget(item)
                 setRenameValue(item.name)
@@ -321,6 +363,20 @@ const Sidebar: FC<ISidebarProps> = ({
             <div className='mt-6 flex justify-end space-x-2'>
               <Button className='h-9 px-3' onClick={closeRenameModal}>{t('common.operation.cancel')}</Button>
               <Button type='primary' className='h-9 px-3' onClick={handleRenameSave} loading={renaming}>{t('common.operation.save')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteTarget && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4' onClick={closeDeleteModal}>
+          <div className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl' onClick={e => e.stopPropagation()}>
+            <div className='text-base font-semibold text-gray-900'>{t('app.chat.deleteConversationTitle')}</div>
+            <div className='mt-3 text-sm text-gray-600'>{t('app.chat.deleteConversationContent')}</div>
+            <div className='mt-6 flex justify-end space-x-2'>
+              <Button className='h-9 px-3' onClick={closeDeleteModal}>{t('common.operation.cancel')}</Button>
+              <Button type='primary' className='h-9 px-3 !bg-red-600 hover:!bg-red-700' onClick={handleDeleteConfirm} loading={deleting}>
+                {t('app.chat.delete') as string}
+              </Button>
             </div>
           </div>
         </div>
