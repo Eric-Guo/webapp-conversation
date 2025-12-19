@@ -247,7 +247,8 @@ const Sidebar: FC<ISidebarProps> = ({
       = isCurrent ? ChatBubbleOvalLeftEllipsisSolidIcon : ChatBubbleOvalLeftEllipsisIcon
     const hasPinAction = item.id !== '-1' && (item.pinned ? !!onUnpinConversation : !!onPinConversation)
     const hasRenameAction = isShowRenameConversation && item.id !== '-1' && !!onRenameConversation
-    const hasDeleteAction = item.id !== '-1' && !!onDeleteConversation
+    const isCreatedToday = item.created_at ? isTimestampToday(item.created_at) : false
+    const hasDeleteAction = item.id !== '-1' && !!onDeleteConversation && !isCreatedToday
     const showActions = item.id !== '-1' && (hasPinAction || hasRenameAction || hasDeleteAction)
 
     return (
