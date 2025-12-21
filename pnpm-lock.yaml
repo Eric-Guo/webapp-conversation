@@ -103,10 +103,10 @@ importers:
         version: 0.6.4
       next:
         specifier: ^15.5.9
-        version: 15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.0)
+        version: 15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.1)
       next-auth:
         specifier: 5.0.0-beta.30
-        version: 5.0.0-beta.30(next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.0))(react@19.1.4)
+        version: 5.0.0-beta.30(next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.1))(react@19.1.4)
       rc-textarea:
         specifier: ^1.10.2
         version: 1.10.2(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
@@ -126,8 +126,8 @@ importers:
         specifier: ^12.3.1
         version: 12.3.1(i18next@23.16.8)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       sass:
-        specifier: ^1.97.0
-        version: 1.97.0
+        specifier: ^1.97.1
+        version: 1.97.1
       scheduler:
         specifier: ^0.23.2
         version: 0.23.2
@@ -1461,8 +1461,8 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  baseline-browser-mapping@2.9.10:
-    resolution: {integrity: sha512-2VIKvDx8Z1a9rTB2eCkdPE5nSe28XnA+qivGnWHoB40hMMt/h1hSz0960Zqsn6ZyxWXUie0EBdElKv8may20AA==}
+  baseline-browser-mapping@2.9.11:
+    resolution: {integrity: sha512-Sg0xJUNDU1sJNGdfGWhVHX0kkZ+HWcvmVymJbj6NSgZZmW/8S9Y2HQ5euytnIgakgxN6papOAWiwDo1ctFDcoQ==}
     hasBin: true
 
   binary-extensions@2.3.0:
@@ -3892,8 +3892,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  sass@1.97.0:
-    resolution: {integrity: sha512-KR0igP1z4avUJetEuIeOdDlwaUDvkH8wSx7FdSjyYBS3dpyX3TzHfAMO0G1Q4/3cdjcmi3r7idh+KCmKqS+KeQ==}
+  sass@1.97.1:
+    resolution: {integrity: sha512-uf6HoO8fy6ClsrShvMgaKUn14f2EHQLQRtpsZZLeU/Mv0Q1K5P0+x2uvH6Cub39TVVbWNSrraUhDAoFph6vh0A==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -5805,7 +5805,7 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  baseline-browser-mapping@2.9.10: {}
+  baseline-browser-mapping@2.9.11: {}
 
   binary-extensions@2.3.0: {}
 
@@ -5828,7 +5828,7 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.9.10
+      baseline-browser-mapping: 2.9.11
       caniuse-lite: 1.0.30001761
       electron-to-chromium: 1.5.267
       node-releases: 2.0.27
@@ -8336,13 +8336,13 @@ snapshots:
 
   negotiator@0.6.4: {}
 
-  next-auth@5.0.0-beta.30(next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.0))(react@19.1.4):
+  next-auth@5.0.0-beta.30(next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.1))(react@19.1.4):
     dependencies:
       '@auth/core': 0.41.0
-      next: 15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.0)
+      next: 15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.1)
       react: 19.1.4
 
-  next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.0):
+  next@15.5.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)(sass@1.97.1):
     dependencies:
       '@next/env': 15.5.9
       '@swc/helpers': 0.5.15
@@ -8360,7 +8360,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 15.5.7
       '@next/swc-win32-arm64-msvc': 15.5.7
       '@next/swc-win32-x64-msvc': 15.5.7
-      sass: 1.97.0
+      sass: 1.97.1
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -8950,7 +8950,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  sass@1.97.0:
+  sass@1.97.1:
     dependencies:
       chokidar: 4.0.3
       immutable: 5.1.4
