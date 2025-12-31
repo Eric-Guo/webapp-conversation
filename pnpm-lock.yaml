@@ -959,14 +959,14 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20 || >=4.0.0-beta.1'
 
-  '@tanstack/react-virtual@3.13.13':
-    resolution: {integrity: sha512-4o6oPMDvQv+9gMi8rE6gWmsOjtUZUYIJHv7EB+GblyYdi8U6OqLl8rhHWIUZSL1dUU2dPwTdTgybCKf9EjIrQg==}
+  '@tanstack/react-virtual@3.13.14':
+    resolution: {integrity: sha512-WG0d7mBD54eA7dgA3+sO5csS0B49QKqM6Gy5Rf31+Oq/LTKROQSao9m2N/vz1IqVragOKU5t5k1LAcqh/DfTxw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@tanstack/virtual-core@3.13.13':
-    resolution: {integrity: sha512-uQFoSdKKf5S8k51W5t7b2qpfkyIbdHMzAn+AMQvHPxKUPeo1SsGaA4JRISQT87jm28b7z8OEqPcg1IOZagQHcA==}
+  '@tanstack/virtual-core@3.13.14':
+    resolution: {integrity: sha512-b5Uvd8J2dc7ICeX9SRb/wkCxWk7pUwN214eEPAQsqrsktSKTCmyLxOQWSMgogBByXclZeAdgZ3k4o0fIYUIBqQ==}
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
@@ -4393,8 +4393,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@4.2.1:
-    resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
+  zod@4.3.0:
+    resolution: {integrity: sha512-dXOXgs5b9ulOPotwXMEsAUoUPL2glchysY0RTJYVqJ7bU0Y5gqE1k3v19eCWrJsczrbae/Dt9+ajrJbr8Ot4uw==}
 
   zrender@5.6.1:
     resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
@@ -4645,7 +4645,7 @@ snapshots:
       '@eslint-react/eff': 1.53.1
       '@typescript-eslint/utils': 8.51.0(eslint@9.35.0(jiti@1.21.7))(typescript@5.9.2)
       ts-pattern: 5.9.0
-      zod: 4.2.1
+      zod: 4.3.0
     transitivePeerDependencies:
       - eslint
       - supports-color
@@ -4657,7 +4657,7 @@ snapshots:
       '@eslint-react/kit': 1.53.1(eslint@9.35.0(jiti@1.21.7))(typescript@5.9.2)
       '@typescript-eslint/utils': 8.51.0(eslint@9.35.0(jiti@1.21.7))(typescript@5.9.2)
       ts-pattern: 5.9.0
-      zod: 4.2.1
+      zod: 4.3.0
     transitivePeerDependencies:
       - eslint
       - supports-color
@@ -4779,7 +4779,7 @@ snapshots:
       '@floating-ui/react': 0.26.28(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       '@react-aria/focus': 3.21.3(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       '@react-aria/interactions': 3.26.0(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
-      '@tanstack/react-virtual': 3.13.13(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+      '@tanstack/react-virtual': 3.13.14(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       react: 19.1.4
       react-dom: 19.1.4(react@19.1.4)
 
@@ -5250,13 +5250,13 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 3.4.19(yaml@2.8.2)
 
-  '@tanstack/react-virtual@3.13.13(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+  '@tanstack/react-virtual@3.13.14(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
     dependencies:
-      '@tanstack/virtual-core': 3.13.13
+      '@tanstack/virtual-core': 3.13.14
       react: 19.1.4
       react-dom: 19.1.4(react@19.1.4)
 
-  '@tanstack/virtual-core@3.13.13': {}
+  '@tanstack/virtual-core@3.13.14': {}
 
   '@tybys/wasm-util@0.10.1':
     dependencies:
@@ -9608,7 +9608,7 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@4.2.1: {}
+  zod@4.3.0: {}
 
   zrender@5.6.1:
     dependencies:
