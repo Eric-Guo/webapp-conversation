@@ -15,6 +15,7 @@ import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader
 import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
 import { getProcessedFiles, hasAvailableFileSlot } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
+import suggestionMap from './suggestion-map.json'
 
 export interface IChatProps {
   chatList: ChatItem[]
@@ -210,7 +211,8 @@ const Chat: FC<IChatProps> = ({
   const suggestionClick = (suggestion: string) => {
     if (isSendButtonDisabled) { return }
     const current = queryRef.current
-    const nextQuery = current ? `${current.replace(/\s+$/, '')} ${suggestion}` : suggestion
+    const resolvedSuggestion = suggestionMap[suggestion as keyof typeof suggestionMap] || suggestion
+    const nextQuery = current ? `${current.replace(/\s+$/, '')} ${resolvedSuggestion}` : resolvedSuggestion
     setQuery(nextQuery)
     queryRef.current = nextQuery
   }
