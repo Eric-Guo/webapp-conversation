@@ -209,9 +209,10 @@ const Chat: FC<IChatProps> = ({
 
   const suggestionClick = (suggestion: string) => {
     if (isSendButtonDisabled) { return }
-    setQuery(suggestion)
-    queryRef.current = suggestion
-    handleSendMessage()
+    const current = queryRef.current
+    const nextQuery = current ? `${current.replace(/\s+$/, '')} ${suggestion}` : suggestion
+    setQuery(nextQuery)
+    queryRef.current = nextQuery
   }
 
   const getImageUrls = (files: VisionFile[] | undefined, belongsTo: 'user' | 'assistant') => {
