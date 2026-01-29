@@ -102,11 +102,11 @@ importers:
         specifier: ^0.6.4
         version: 0.6.4
       next:
-        specifier: ^15.5.10
-        version: 15.5.10(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3)
+        specifier: ^15.5.11
+        version: 15.5.11(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3)
       next-auth:
         specifier: 5.0.0-beta.30
-        version: 5.0.0-beta.30(next@15.5.10(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3))(react@19.1.5)
+        version: 5.0.0-beta.30(next@15.5.11(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3))(react@19.1.5)
       rc-textarea:
         specifier: ^1.10.2
         version: 1.10.2(react-dom@19.1.5(react@19.1.5))(react@19.1.5)
@@ -726,8 +726,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@next/env@15.5.10':
-    resolution: {integrity: sha512-plg+9A/KoZcTS26fe15LHg+QxReTazrIOoKKUC3Uz4leGGeNPgLHdevVraAAOX0snnUs3WkRx3eUQpj9mreG6A==}
+  '@next/env@15.5.11':
+    resolution: {integrity: sha512-g9s5SS9gC7GJCEOR3OV3zqs7C5VddqxP9X+/6BpMbdXRkqsWfFf2CJPBZNvNEtAkKTNuRgRXAgNxSAXzfLdaTg==}
 
   '@next/eslint-plugin-next@14.2.35':
     resolution: {integrity: sha512-Jw9A3ICz2183qSsqwi7fgq4SBPiNfmOLmTPXKvlnzstUwyvBrtySiY+8RXJweNAs9KThb1+bYhZh9XWcNOr2zQ==}
@@ -1495,8 +1495,8 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  baseline-browser-mapping@2.9.18:
-    resolution: {integrity: sha512-e23vBV1ZLfjb9apvfPk4rHVu2ry6RIr2Wfs+O324okSidrX7pTAnEJPCh/O5BtRlr7QtZI7ktOP3vsqr7Z5XoA==}
+  baseline-browser-mapping@2.9.19:
+    resolution: {integrity: sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg==}
     hasBin: true
 
   binary-extensions@2.3.0:
@@ -3394,8 +3394,8 @@ packages:
       nodemailer:
         optional: true
 
-  next@15.5.10:
-    resolution: {integrity: sha512-r0X65PNwyDDyOrWNKpQoZvOatw7BcsTPRKdwEqtc9cj3wv7mbBIk9tKed4klRaFXJdX0rugpuMTHslDrAU1bBg==}
+  next@15.5.11:
+    resolution: {integrity: sha512-L2KPiKmqTDpRdeVDdPjhf43g2/VPe0NCNndq7OKDCgOLWtxe1kbr/zXGIZtYY7kZEAjRf7Bj/mwUFSr+tYC2Yg==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
@@ -5069,7 +5069,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@next/env@15.5.10': {}
+  '@next/env@15.5.11': {}
 
   '@next/eslint-plugin-next@14.2.35':
     dependencies:
@@ -5849,7 +5849,7 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  baseline-browser-mapping@2.9.18: {}
+  baseline-browser-mapping@2.9.19: {}
 
   binary-extensions@2.3.0: {}
 
@@ -5872,7 +5872,7 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.9.18
+      baseline-browser-mapping: 2.9.19
       caniuse-lite: 1.0.30001766
       electron-to-chromium: 1.5.279
       node-releases: 2.0.27
@@ -8382,15 +8382,15 @@ snapshots:
 
   negotiator@0.6.4: {}
 
-  next-auth@5.0.0-beta.30(next@15.5.10(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3))(react@19.1.5):
+  next-auth@5.0.0-beta.30(next@15.5.11(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3))(react@19.1.5):
     dependencies:
       '@auth/core': 0.41.0
-      next: 15.5.10(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3)
+      next: 15.5.11(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3)
       react: 19.1.5
 
-  next@15.5.10(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3):
+  next@15.5.11(react-dom@19.1.5(react@19.1.5))(react@19.1.5)(sass@1.97.3):
     dependencies:
-      '@next/env': 15.5.10
+      '@next/env': 15.5.11
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001766
       postcss: 8.4.31
