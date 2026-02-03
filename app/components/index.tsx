@@ -29,7 +29,7 @@ import { isTimestampToday } from '@/utils/date'
 
 const MAX_CONVERSATION_LIMIT_TODAY = 60
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
-const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案'])
+const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案', '集团品牌公关'])
 
 export interface IMainProps {
   params: any
