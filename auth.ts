@@ -20,6 +20,10 @@ interface MainPosition {
   functional_category?: string | null
 }
 
+interface InternalMetrics {
+  functional_category?: string | null
+}
+
 const fetchUserInfo = async (accessToken?: string) => {
   if (!accessToken) { return null }
   if (!userInfoEndpoint) { return null }
@@ -72,6 +76,28 @@ const normalizeMainPosition = (mainPosition?: unknown): MainPosition | null => {
   }
 }
 
+const normalizeInternalMetrics = (internalMetrics?: unknown): InternalMetrics | null => {
+  if (!internalMetrics || typeof internalMetrics !== 'object' || Array.isArray(internalMetrics)) { return null }
+
+  const metrics = internalMetrics as Record<string, unknown>
+  const functionalCategory = typeof metrics.functional_category === 'string' ? metrics.functional_category : null
+  if (!functionalCategory) { return null }
+
+  return {
+    functional_category: functionalCategory,
+  }
+}
+
+const buildInternalMetrics = (mainPosition?: MainPosition | null, internalMetrics?: unknown): InternalMetrics | null => {
+  const normalizedInternalMetrics = normalizeInternalMetrics(internalMetrics)
+  const functionalCategory = mainPosition?.functional_category || normalizedInternalMetrics?.functional_category || null
+  if (!functionalCategory) { return null }
+
+  return {
+    functional_category: functionalCategory,
+  }
+}
+
 if (!clientId || !clientSecret) {
   throw new Error('Missing AUTH_SSO_CLIENT_ID or AUTH_SSO_CLIENT_SECRET. Set them in .env.local to enable SSO.')
 }
@@ -99,11 +125,13 @@ const authConfig: NextAuthConfig = {
       checks: ['pkce', 'state', 'nonce'],
       profile(profile: Record<string, any>) {
         const id = profile.email || profile.sub || profile.preferred_username || profile.id
+        const mainPosition = normalizeMainPosition(profile.main_position)
         return {
           id,
           name: profile.name || profile.preferred_username || profile.email || 'User',
           email: profile.email ?? null,
-          main_position: normalizeMainPosition(profile.main_position),
+          main_position: mainPosition,
+          internal_metrics: buildInternalMetrics(mainPosition),
         }
       },
     },
@@ -121,24 +149,33 @@ const authConfig: NextAuthConfig = {
       if (profile) {
         token.email = profile.email || profile.preferred_username || token.email
         token.name = profile.name || profile.preferred_username || profile.email || token.name
-        token.main_position = normalizeMainPosition(profile.main_position) || token.main_position
+        const profileMainPosition = normalizeMainPosition(profile.main_position)
+        token.main_position = profileMainPosition || token.main_position
+        token.internal_metrics = buildInternalMetrics(profileMainPosition, token.internal_metrics) || token.internal_metrics
       }
 
       if (user) {
         token.email = user.email || token.email
         token.name = user.name || token.name
-        token.main_position = normalizeMainPosition((user as Record<string, unknown>).main_position) || token.main_position
+        const userRecord = user as Record<string, unknown>
+        const userMainPosition = normalizeMainPosition(userRecord.main_position)
+        token.main_position = userMainPosition || token.main_position
+        token.internal_metrics = buildInternalMetrics(userMainPosition, userRecord.internal_metrics || token.internal_metrics) || token.internal_metrics
       }
 
-      if (account?.access_token && (!token.email || !token.name || !token.main_position)) {
+      if (account?.access_token && (!token.email || !token.name || !token.main_position || !token.internal_metrics)) {
         const userInfo = await fetchUserInfo(account.access_token)
         // there is more data in userInfo if required.
         if (userInfo) {
+          const userInfoMainPosition = normalizeMainPosition(userInfo.main_position)
           token.email = userInfo.email || userInfo.preferred_username || token.email
           token.name = userInfo.name || userInfo.preferred_username || userInfo.email || token.name
-          token.main_position = normalizeMainPosition(userInfo.main_position) || token.main_position
+          token.main_position = userInfoMainPosition || token.main_position
+          token.internal_metrics = buildInternalMetrics(userInfoMainPosition, token.internal_metrics) || token.internal_metrics
         }
       }
+
+      token.internal_metrics = buildInternalMetrics(normalizeMainPosition(token.main_position), token.internal_metrics) || token.internal_metrics
 
       return token
     },
@@ -147,6 +184,7 @@ const authConfig: NextAuthConfig = {
         session.user.email = (token.email as string) || session.user.email || null
         session.user.name = (token.name as string) || session.user.name || null
         session.user.main_position = (token.main_position as MainPosition | null) || session.user.main_position || null
+        session.user.internal_metrics = (token.internal_metrics as InternalMetrics | null) || session.user.internal_metrics || null
       }
 
       return session

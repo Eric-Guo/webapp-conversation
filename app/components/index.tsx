@@ -28,6 +28,8 @@ import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 import { isTimestampToday } from '@/utils/date'
 
 const MAX_CONVERSATION_LIMIT_TODAY = 60
+const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
+const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案'])
 
 export interface IMainProps {
   params: any
@@ -43,6 +45,8 @@ const Main: FC<IMainProps> = () => {
   const userTitle = session?.user?.main_position?.name || ''
   const userNameOrEmail = session?.user?.name || session?.user?.email || ''
   const userLabel = userNameOrEmail && userTitle ? `${userNameOrEmail} (${userTitle})` : userNameOrEmail || userTitle
+  const userFunctionalCategory = (session?.user?.internal_metrics?.functional_category || session?.user?.main_position?.functional_category || '').trim()
+  const todayConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
@@ -100,7 +104,7 @@ const Main: FC<IMainProps> = () => {
     () => conversationList.filter(item => isTimestampToday(item.created_at)).length,
     [conversationList],
   )
-  const hasReachedConversationLimit = todayConversationCount >= MAX_CONVERSATION_LIMIT_TODAY
+  const hasReachedConversationLimit = todayConversationCount >= todayConversationLimit
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew, getConversationIdChangeBecauseOfNew] = useGetState(false)
   const [shouldAutoStartNewChat, setShouldAutoStartNewChat] = useState(false)
   const [isChatStarted, { setTrue: setChatStarted, setFalse: setChatNotStarted }] = useBoolean(false)
@@ -190,7 +194,7 @@ const Main: FC<IMainProps> = () => {
     if (hasReachedConversationLimit) {
       Toast.notify({
         type: 'error',
-        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
+        message: t('app.errorMessage.conversationLimitReached', { limit: todayConversationLimit }),
       })
       return false
     }
@@ -838,7 +842,7 @@ const Main: FC<IMainProps> = () => {
         onCurrentIdChange={handleConversationIdChange}
         currentId={currConversationId}
         copyRight={APP_INFO.copyright || APP_INFO.title}
-        conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        conversationLimit={todayConversationLimit}
         onRenameConversation={handleRenameConversation}
         onPinConversation={handlePinConversation}
         onUnpinConversation={handleUnpinConversation}
@@ -889,7 +893,7 @@ const Main: FC<IMainProps> = () => {
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
         todayConversationCount={todayConversationCount}
-        todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        todayConversationLimit={todayConversationLimit}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
@@ -916,7 +920,7 @@ const Main: FC<IMainProps> = () => {
             savedInputs={currInputs as Record<string, any>}
             onInputsChange={setCurrInputs}
             todayConversationCount={todayConversationCount}
-            todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+            todayConversationLimit={todayConversationLimit}
           ></ConfigSence>
 
           {
