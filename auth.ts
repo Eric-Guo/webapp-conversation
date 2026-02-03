@@ -14,6 +14,12 @@ const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
 
 const userInfoEndpoint = process.env.AUTH_SSO_USERINFO || `${issuer?.replace(/\/$/, '')}/oauth/userinfo`
 
+interface MainPosition {
+  id?: string | number
+  name?: string
+  functional_category?: string | null
+}
+
 const fetchUserInfo = async (accessToken?: string) => {
   if (!accessToken) { return null }
   if (!userInfoEndpoint) { return null }
@@ -37,6 +43,33 @@ const fetchUserInfo = async (accessToken?: string) => {
 const normalizeUserName = (name?: unknown) => {
   if (typeof name !== 'string') { return '' }
   return name.trim().toLowerCase()
+}
+
+const normalizeMainPosition = (mainPosition?: unknown): MainPosition | null => {
+  let parsedMainPosition = mainPosition
+  if (typeof parsedMainPosition === 'string') {
+    try {
+      parsedMainPosition = JSON.parse(parsedMainPosition)
+    }
+    catch {
+      return null
+    }
+  }
+
+  if (!parsedMainPosition || typeof parsedMainPosition !== 'object' || Array.isArray(parsedMainPosition)) { return null }
+
+  const position = parsedMainPosition as Record<string, unknown>
+  const id = typeof position.id === 'string' || typeof position.id === 'number' ? position.id : undefined
+  const name = typeof position.name === 'string' ? position.name : undefined
+  const functionalCategory = typeof position.functional_category === 'string' ? position.functional_category : null
+
+  if (!id && !name && !functionalCategory) { return null }
+
+  return {
+    id,
+    name,
+    functional_category: functionalCategory,
+  }
 }
 
 if (!clientId || !clientSecret) {
@@ -70,6 +103,7 @@ const authConfig: NextAuthConfig = {
           id,
           name: profile.name || profile.preferred_username || profile.email || 'User',
           email: profile.email ?? null,
+          main_position: normalizeMainPosition(profile.main_position),
         }
       },
     },
@@ -87,19 +121,22 @@ const authConfig: NextAuthConfig = {
       if (profile) {
         token.email = profile.email || profile.preferred_username || token.email
         token.name = profile.name || profile.preferred_username || profile.email || token.name
+        token.main_position = normalizeMainPosition(profile.main_position) || token.main_position
       }
 
       if (user) {
         token.email = user.email || token.email
         token.name = user.name || token.name
+        token.main_position = normalizeMainPosition((user as Record<string, unknown>).main_position) || token.main_position
       }
 
-      if (account?.access_token && (!token.email || !token.name)) {
+      if (account?.access_token && (!token.email || !token.name || !token.main_position)) {
         const userInfo = await fetchUserInfo(account.access_token)
         // there is more data in userInfo if required.
         if (userInfo) {
           token.email = userInfo.email || userInfo.preferred_username || token.email
           token.name = userInfo.name || userInfo.preferred_username || userInfo.email || token.name
+          token.main_position = normalizeMainPosition(userInfo.main_position) || token.main_position
         }
       }
 
@@ -109,6 +146,7 @@ const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.email = (token.email as string) || session.user.email || null
         session.user.name = (token.name as string) || session.user.name || null
+        session.user.main_position = (token.main_position as MainPosition | null) || session.user.main_position || null
       }
 
       return session

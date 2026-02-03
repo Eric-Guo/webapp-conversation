@@ -40,7 +40,9 @@ const Main: FC<IMainProps> = () => {
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
-  const userLabel = session?.user?.name || session?.user?.email || ''
+  const userTitle = session?.user?.main_position?.name || ''
+  const userNameOrEmail = session?.user?.name || session?.user?.email || ''
+  const userLabel = userNameOrEmail && userTitle ? `${userNameOrEmail} (${userTitle})` : userNameOrEmail || userTitle
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
