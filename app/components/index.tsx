@@ -30,6 +30,9 @@ import { isTimestampToday } from '@/utils/date'
 const MAX_CONVERSATION_LIMIT_TODAY = 60
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
 const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案', '集团品牌公关'])
+const HIGH_LIMIT_USERNAMES = new Set([
+  'yangwenbiao', // 实习生
+])
 
 export interface IMainProps {
   params: any
@@ -44,9 +47,11 @@ const Main: FC<IMainProps> = () => {
   const hasSetAppConfig = APP_ID && API_KEY
   const userTitle = session?.user?.main_position?.name || ''
   const userNameOrEmail = session?.user?.name || session?.user?.email || ''
+  const normalizedUserName = (session?.user?.name || '').trim().toLowerCase()
   const userLabel = userNameOrEmail && userTitle ? `${userNameOrEmail} (${userTitle})` : userNameOrEmail || userTitle
   const userFunctionalCategory = (session?.user?.internal_metrics?.functional_category || session?.user?.main_position?.functional_category || '').trim()
-  const todayConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
+  const hasHighConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) || HIGH_LIMIT_USERNAMES.has(normalizedUserName)
+  const todayConversationLimit = hasHighConversationLimit ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
