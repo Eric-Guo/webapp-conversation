@@ -27,7 +27,7 @@ import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 import { isTimestampToday } from '@/utils/date'
 
-const MAX_CONVERSATION_LIMIT_TODAY = 42
+const MAX_CONVERSATION_LIMIT_TODAY = 60
 
 export interface IMainProps {
   params: any
