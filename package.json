@@ -27,7 +27,7 @@
     "@types/react-dom": "~18.3.7",
     "@types/react-syntax-highlighter": "^15.5.13",
     "ahooks": "^3.9.6",
-    "axios": "^1.13.4",
+    "axios": "^1.13.5",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "copy-to-clipboard": "^3.3.3",
@@ -89,5 +89,5 @@
       "eslint --fix"
     ]
   },
-  "packageManager": "pnpm@10.28.2"
+  "packageManager": "pnpm@10.29.2"
 }
