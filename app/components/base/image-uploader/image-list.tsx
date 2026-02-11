@@ -79,7 +79,7 @@ const ImageList: FC<ImageListProps> = ({
                   }
                   {
                     item.progress === -1 && (
-                      <TooltipPlus popupContent={t('common.imageUploader.pasteImageLinkInvalid')}>
+                      <TooltipPlus popupContent={t('common.uploader.pasteFileLinkInvalid')}>
                         <AlertTriangle className='w-4 h-4 text-[#DC6803]' />
                       </TooltipPlus>
                     )

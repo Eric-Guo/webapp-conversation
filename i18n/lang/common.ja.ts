@@ -18,17 +18,7 @@ const translation = {
     dislike: 'よくないね',
     ok: 'OK',
   },
-  imageUploader: {
-    uploadFromComputer: 'コンピューターからアップロード',
-    uploadFromComputerReadError: '画像の読み込みに失敗しました。もう一度お試しください。',
-    uploadFromComputerUploadError: '画像のアップロードに失敗しました。もう一度アップロードしてください。',
-    uploadFromComputerLimit: 'アップロードする画像は{{size}} MBを超えてはいけません',
-    pasteImageLink: '画像リンクを貼り付け',
-    pasteImageLinkInputPlaceholder: 'ここに画像リンクを貼り付けてください',
-    pasteImageLinkInvalid: '無効な画像リンクです',
-    imageUpload: '画像アップロード',
-  },
-  fileUploader: {
+  uploader: {
     uploadFromComputer: 'ローカルアップロード',
     pasteFileLink: 'ファイルリンクの貼り付け',
     pasteFileLinkInputPlaceholder: 'URLを入力...',
@@ -37,6 +27,7 @@ const translation = {
     uploadFromComputerReadError: 'ファイルの読み取りに失敗しました。もう一度やり直してください。',
     fileExtensionNotSupport: 'ファイル拡張子はサポートされていません',
     pasteFileLinkInvalid: '無効なファイルリンク',
+    uploadCountLimit: 'アップロード可能な上限に達しました',
   },
 }
 

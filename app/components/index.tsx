@@ -100,6 +100,7 @@ const Main: FC<IMainProps> = () => {
   )
   const hasReachedConversationLimit = todayConversationCount >= MAX_CONVERSATION_LIMIT_TODAY
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew, getConversationIdChangeBecauseOfNew] = useGetState(false)
+  const [shouldAutoStartNewChat, setShouldAutoStartNewChat] = useState(false)
   const [isChatStarted, { setTrue: setChatStarted, setFalse: setChatNotStarted }] = useBoolean(false)
   const handleStartChat = (inputs: Record<string, any>) => {
     const hasCreated = createNewChat()
@@ -119,6 +120,67 @@ const Main: FC<IMainProps> = () => {
   const conversationName = currConversationInfo?.name || t('app.chat.newChatDefaultName') as string
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
+
+  // sometime introduction is not applied to state
+  const generateNewChatListWithOpenStatement = (introduction?: string, inputs?: Record<string, any> | null) => {
+    let calculatedIntroduction = introduction || conversationIntroduction || ''
+    const calculatedPromptVariables = inputs || currInputs || null
+    if (calculatedIntroduction && calculatedPromptVariables) { calculatedIntroduction = replaceVarWithValues(calculatedIntroduction, promptConfig?.prompt_variables || [], calculatedPromptVariables) }
+
+    const openStatement = {
+      id: `${Date.now()}`,
+      content: calculatedIntroduction,
+      isAnswer: true,
+      feedbackDisabled: true,
+      isOpeningStatement: isShowPrompt,
+      suggestedQuestions,
+    }
+    if (calculatedIntroduction) { return [openStatement] }
+
+    return []
+  }
+
+  /*
+  * chat info. chat is under conversation.
+  */
+  const [chatList, setChatList, getChatList] = useGetState<ChatItem[]>([])
+  const chatListDomRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    // scroll to bottom with page-level scrolling
+    if (chatListDomRef.current) {
+      setTimeout(() => {
+        chatListDomRef.current?.scrollIntoView({
+          behavior: 'auto',
+          block: 'end',
+        })
+      }, 50)
+    }
+  }, [chatList, currConversationId])
+  // user can not edit inputs if user had send message
+  const canEditInputs = !chatList.some(item => item.isAnswer === false) && isNewConversation
+  const createNewChat = () => {
+    if (hasReachedConversationLimit) {
+      Toast.notify({
+        type: 'error',
+        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
+      })
+      return false
+    }
+
+    // if new chat is already exist, do not create new chat
+    if (conversationList.some(item => item.id === '-1')) { return true }
+
+    setConversationList(produce(conversationList, (draft) => {
+      draft.unshift({
+        id: '-1',
+        name: t('app.chat.newChatDefaultName'),
+        inputs: newConversationInputs,
+        introduction: conversationIntroduction,
+        suggested_questions: suggestedQuestions,
+      })
+    }))
+    return true
+  }
 
   const handleConversationSwitch = () => {
     if (!inited) { return }
@@ -180,77 +242,43 @@ const Main: FC<IMainProps> = () => {
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
       const hasCreated = createNewChat()
-      if (!hasCreated) { return }
+      if (!hasCreated) {
+        setShouldAutoStartNewChat(false)
+        return
+      }
       setConversationIdChangeBecauseOfNew(true)
+      setShouldAutoStartNewChat(true)
     }
     else {
       setConversationIdChangeBecauseOfNew(false)
+      setShouldAutoStartNewChat(false)
     }
     // trigger handleConversationSwitch
     setCurrConversationId(id, APP_ID)
     hideSidebar()
   }
 
-  /*
-  * chat info. chat is under conversation.
-  */
-  const [chatList, setChatList, getChatList] = useGetState<ChatItem[]>([])
-  const chatListDomRef = useRef<HTMLDivElement>(null)
+  // auto start a fresh chat as soon as the user clicks New Chat
   useEffect(() => {
-    // scroll to bottom with page-level scrolling
-    if (chatListDomRef.current) {
-      setTimeout(() => {
-        chatListDomRef.current?.scrollIntoView({
-          behavior: 'auto',
-          block: 'end',
-        })
-      }, 50)
+    if (!shouldAutoStartNewChat || currConversationId !== '-1') { return }
+    if (isChatStarted) {
+      setShouldAutoStartNewChat(false)
+      return
     }
-  }, [chatList, currConversationId])
-  // user can not edit inputs if user had send message
-  const canEditInputs = !chatList.some(item => item.isAnswer === false) && isNewConversation
-  const createNewChat = () => {
-    if (hasReachedConversationLimit) {
-      Toast.notify({
-        type: 'error',
-        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
-      })
-      return false
-    }
-
-    // if new chat is already exist, do not create new chat
-    if (conversationList.some(item => item.id === '-1')) { return true }
-
-    setConversationList(produce(conversationList, (draft) => {
-      draft.unshift({
-        id: '-1',
-        name: t('app.chat.newChatDefaultName'),
-        inputs: newConversationInputs,
-        introduction: conversationIntroduction,
-        suggested_questions: suggestedQuestions,
-      })
-    }))
-    return true
-  }
-
-  // sometime introduction is not applied to state
-  const generateNewChatListWithOpenStatement = (introduction?: string, inputs?: Record<string, any> | null) => {
-    let calculatedIntroduction = introduction || conversationIntroduction || ''
-    const calculatedPromptVariables = inputs || currInputs || null
-    if (calculatedIntroduction && calculatedPromptVariables) { calculatedIntroduction = replaceVarWithValues(calculatedIntroduction, promptConfig?.prompt_variables || [], calculatedPromptVariables) }
-
-    const openStatement = {
-      id: `${Date.now()}`,
-      content: calculatedIntroduction,
-      isAnswer: true,
-      feedbackDisabled: true,
-      isOpeningStatement: isShowPrompt,
-      suggestedQuestions,
-    }
-    if (calculatedIntroduction) { return [openStatement] }
-
-    return []
-  }
+    const resolvedInputs = (() => {
+      if (newConversationInputs) { return newConversationInputs }
+      const promptVariables = promptConfig?.prompt_variables || []
+      if (!promptVariables.length) { return {} }
+      return promptVariables.reduce((acc: Record<string, any>, item) => {
+        acc[item.key] = ''
+        return acc
+      }, {} as Record<string, any>)
+    })()
+    setCurrInputs(resolvedInputs)
+    setChatStarted()
+    setChatList(generateNewChatListWithOpenStatement(undefined, resolvedInputs))
+    setShouldAutoStartNewChat(false)
+  }, [currConversationId, generateNewChatListWithOpenStatement, isChatStarted, newConversationInputs, promptConfig, setChatList, setChatStarted, setCurrInputs, shouldAutoStartNewChat])
 
   // init
   useEffect(() => {
@@ -390,11 +418,19 @@ const Main: FC<IMainProps> = () => {
   }
 
   const transformToServerFile = (fileItem: any) => {
-    return {
-      type: 'image',
+    const baseInfo = {
+      type: fileItem.supportFileType || fileItem.type,
       transfer_method: fileItem.transferMethod,
-      url: fileItem.url,
-      upload_file_id: fileItem.id,
+    }
+    if (fileItem.transferMethod === TransferMethod.remote_url) {
+      return {
+        ...baseInfo,
+        url: fileItem.url,
+      }
+    }
+    return {
+      ...baseInfo,
+      upload_file_id: fileItem.uploadedId || fileItem.id,
     }
   }
 

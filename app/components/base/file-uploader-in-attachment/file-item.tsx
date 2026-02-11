@@ -23,6 +23,7 @@ import { formatFileSize } from '@/utils/format'
 import cn from '@/utils/classnames'
 import ReplayLine from '@/app/components/base/icons/other/ReplayLine'
 import ImagePreview from '@/app/components/base/image-uploader/image-preview'
+import { TransferMethod } from '@/types/app'
 
 interface FileInAttachmentItemProps {
   file: FileEntity
@@ -31,6 +32,8 @@ interface FileInAttachmentItemProps {
   onRemove?: (fileId: string) => void
   onReUpload?: (fileId: string) => void
   canPreview?: boolean
+  onImageLinkLoadSuccess?: () => void
+  onImageLinkLoadError?: () => void
 }
 const FileInAttachmentItem = ({
   file,
@@ -39,11 +42,23 @@ const FileInAttachmentItem = ({
   onRemove,
   onReUpload,
   canPreview,
+  onImageLinkLoadSuccess,
+  onImageLinkLoadError,
 }: FileInAttachmentItemProps) => {
   const { id, name, type, progress, supportFileType, base64Url, url, isRemote } = file
   const ext = getFileExtension(name, type, isRemote)
   const isImageFile = supportFileType === SupportUploadFileTypes.image
+  const imageUrl = base64Url || url || ''
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
+
+  const handleImageLoad = () => {
+    if (file.transferMethod !== TransferMethod.remote_url || file.progress === -1) { return }
+    onImageLinkLoadSuccess?.()
+  }
+  const handleImageError = () => {
+    if (file.transferMethod !== TransferMethod.remote_url) { return }
+    onImageLinkLoadError?.()
+  }
   return (
     <>
       <div className={cn(
@@ -55,7 +70,9 @@ const FileInAttachmentItem = ({
             isImageFile && (
               <FileImageRender
                 className='h-8 w-8'
-                imageUrl={base64Url || url || ''}
+                imageUrl={imageUrl}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
             )
           }
@@ -103,7 +120,7 @@ const FileInAttachmentItem = ({
             )
           }
           {
-            progress === -1 && (
+            progress === -1 && file.transferMethod === TransferMethod.local_file && (
               <ActionButton
                 className='mr-1'
                 onClick={() => onReUpload?.(id)}
@@ -121,7 +138,7 @@ const FileInAttachmentItem = ({
           }
           {
             canPreview && isImageFile && (
-              <ActionButton className='mr-1' onClick={() => setImagePreviewUrl(url || '')}>
+              <ActionButton className='mr-1' onClick={() => setImagePreviewUrl(imageUrl)}>
                 <RiEyeLine className='h-4 w-4' />
               </ActionButton>
             )

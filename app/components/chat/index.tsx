@@ -10,12 +10,10 @@ import type { FeedbackFunc } from './type'
 import type { ChatItem, VisionFile, VisionSettings } from '@/types/app'
 import { TransferMethod } from '@/types/app'
 import Toast from '@/app/components/base/toast'
-import ChatImageUploader from '@/app/components/base/image-uploader/chat-image-uploader'
-import ImageList from '@/app/components/base/image-uploader/image-list'
-import { useImageFiles } from '@/app/components/base/image-uploader/hooks'
 import FileUploaderInAttachmentWrapper from '@/app/components/base/file-uploader-in-attachment'
 import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
-import { getProcessedFiles } from '@/app/components/base/file-uploader-in-attachment/utils'
+import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
+import { getProcessedFiles, hasAvailableFileSlot } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
 
 export interface IChatProps {
@@ -61,6 +59,7 @@ const Chat: FC<IChatProps> = ({
   const queryRef = useRef('')
   const [handleAttachmentPaste, setHandleAttachmentPaste] = React.useState<((e: React.ClipboardEvent<HTMLTextAreaElement>) => void) | undefined>()
   const isSendButtonDisabled = !!isResponding || sendDisabled
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = React.useState(false)
 
   const handleContentChange = (e: any) => {
     const value = e.target.value
@@ -87,35 +86,101 @@ const Chat: FC<IChatProps> = ({
       queryRef.current = ''
     }
   }, [controlClearQuery])
-  const {
-    files,
-    onUpload,
-    onRemove,
-    onReUpload,
-    onImageLinkLoadError,
-    onImageLinkLoadSuccess,
-    onClear,
-  } = useImageFiles()
+  const [imageFiles, setImageFiles] = React.useState<FileEntity[]>([])
+  const imageFileConfig = React.useMemo<FileUpload | undefined>(() => {
+    const transferMethods = visionConfig?.transfer_methods
+    if (!visionConfig || !transferMethods?.length) { return undefined }
 
+    const allowedMethods = transferMethods.includes(TransferMethod.all)
+      ? [TransferMethod.local_file, TransferMethod.remote_url]
+      : transferMethods
+
+    return {
+      enabled: visionConfig.enabled,
+      image: {
+        enabled: visionConfig.enabled,
+        detail: visionConfig.detail,
+        number_limits: visionConfig.number_limits,
+        transfer_methods: allowedMethods,
+      },
+      allowed_file_types: [SupportUploadFileTypes.image],
+      allowed_file_upload_methods: allowedMethods,
+      number_limits: visionConfig.number_limits,
+      fileUploadConfig: {
+        batch_count_limit: 5,
+        image_file_size_limit: visionConfig.image_file_size_limit,
+        file_size_limit: Number(visionConfig.image_file_size_limit) || 0,
+      },
+    }
+  }, [visionConfig])
   const [attachmentFiles, setAttachmentFiles] = React.useState<FileEntity[]>([])
   const handleClipboardPasteReady = (handler: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void) => {
     setHandleAttachmentPaste(() => handler)
   }
+  const canUploadImages = !!(visionConfig?.enabled && imageFileConfig?.enabled)
+  const canUploadAttachments = !!fileConfig?.enabled
+  const combinedFiles = React.useMemo(() => [...imageFiles, ...attachmentFiles], [imageFiles, attachmentFiles])
+
+  const mergedFileConfig = React.useMemo<FileUpload | undefined>(() => {
+    if (canUploadAttachments && canUploadImages && fileConfig && imageFileConfig) {
+      const allowedFileTypes = Array.from(new Set([
+        ...(fileConfig.allowed_file_types || []),
+        ...(imageFileConfig.allowed_file_types || []),
+      ]))
+      const allowedFileExtensions = Array.from(new Set([
+        ...(fileConfig.allowed_file_extensions || []),
+        ...(imageFileConfig.allowed_file_extensions || []),
+      ]))
+      const allowedFileUploadMethods = (() => {
+        const methods = [
+          ...(fileConfig.allowed_file_upload_methods || []),
+          ...(imageFileConfig.allowed_file_upload_methods || []),
+        ]
+        if (!methods.length) { return undefined }
+        if (methods.includes(TransferMethod.all)) { return [TransferMethod.local_file, TransferMethod.remote_url] }
+        return Array.from(new Set(methods))
+      })()
+
+      return {
+        ...fileConfig,
+        image: imageFileConfig.image || fileConfig.image,
+        allowed_file_types: allowedFileTypes,
+        allowed_file_extensions: allowedFileExtensions,
+        allowed_file_upload_methods: allowedFileUploadMethods,
+        fileUploadConfig: {
+          ...(fileConfig.fileUploadConfig || {}),
+          image_file_size_limit: imageFileConfig.fileUploadConfig?.image_file_size_limit ?? fileConfig.fileUploadConfig?.image_file_size_limit,
+        },
+      }
+    }
+    if (canUploadAttachments) { return fileConfig }
+    return imageFileConfig
+  }, [canUploadAttachments, canUploadImages, fileConfig, imageFileConfig])
+  const hasImageUploadSlot = React.useMemo(() => {
+    if (!canUploadImages || !imageFileConfig) { return false }
+    return hasAvailableFileSlot(imageFileConfig, imageFiles)
+  }, [canUploadImages, imageFileConfig, imageFiles])
+  const hasAttachmentUploadSlot = React.useMemo(() => {
+    if (!canUploadAttachments || !fileConfig) { return false }
+    return hasAvailableFileSlot(fileConfig, attachmentFiles)
+  }, [attachmentFiles, canUploadAttachments, fileConfig])
+  const hasUploadSlot = hasImageUploadSlot || hasAttachmentUploadSlot
+  const isAttachmentButtonDisabled = (!canUploadImages && !canUploadAttachments) || !hasUploadSlot
+  useEffect(() => {
+    if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
+  }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
 
   const handleSend = () => {
     if (isSendButtonDisabled) { return }
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
-    const imageFiles: VisionFile[] = files.filter(file => file.progress !== -1).map(fileItem => ({
-      type: 'image',
-      transfer_method: fileItem.type,
-      url: fileItem.url,
-      upload_file_id: fileItem.fileId,
-    }))
+    const imageFilePayloads: VisionFile[] = getProcessedFiles(imageFiles)
     const docAndOtherFiles: VisionFile[] = getProcessedFiles(attachmentFiles)
-    const combinedFiles: VisionFile[] = [...imageFiles, ...docAndOtherFiles]
+    const combinedFiles: VisionFile[] = [...imageFilePayloads, ...docAndOtherFiles]
     onSend(queryRef.current, combinedFiles)
-    if (!files.find(item => item.type === TransferMethod.local_file && !item.fileId)) {
-      if (files.length) { onClear() }
+    if (isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
+    const hasPendingLocalImages = imageFiles.some(item => item.transferMethod === TransferMethod.local_file && !item.uploadedId)
+    if (!hasPendingLocalImages) {
+      if (imageFiles.length) { setImageFiles([]) }
       if (!isResponding) {
         setQuery('')
         queryRef.current = ''
@@ -194,17 +259,6 @@ const Chat: FC<IChatProps> = ({
           <div className='fixed z-10 bottom-0 left-1/2 transform -translate-x-1/2 pc:ml-[122px] tablet:ml-[96px] mobile:ml-0 pc:w-[794px] tablet:w-[794px] max-w-full mobile:w-full px-3.5 pb-4'>
             <div className='relative space-y-2'>
               <div className='flex items-start gap-3 rounded-[18px] border border-gray-100 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)]'>
-                {
-                  visionConfig?.enabled && (
-                    <div className='pt-1'>
-                      <ChatImageUploader
-                        settings={visionConfig}
-                        onUpload={onUpload}
-                        disabled={files.length >= visionConfig.number_limits}
-                      />
-                    </div>
-                  )
-                }
                 <div className='flex-1'>
                   <Textarea
                     className='block w-full resize-none border-none bg-transparent p-0 text-base leading-6 text-gray-700 outline-none'
@@ -218,32 +272,43 @@ const Chat: FC<IChatProps> = ({
                   />
                 </div>
                 {
-                  fileConfig?.enabled && (
+                  (canUploadImages || canUploadAttachments) && mergedFileConfig && (
                     <div className='relative flex items-start'>
-                      <FileUploaderInAttachmentWrapper
-                        fileConfig={fileConfig}
-                        value={attachmentFiles}
-                        onChange={setAttachmentFiles}
-                        onHandleClipboardPasteFile={handleClipboardPasteReady}
-                        variant='compact'
-                        trigger={(open) => {
-                          const disabled = !!(fileConfig.number_limits && attachmentFiles.length >= fileConfig.number_limits)
-                          return (
-                            <button
-                              type='button'
-                              className={`
-                                flex h-10 w-10 items-center justify-center rounded-full
-                                ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'bg-white text-gray-500 hover:bg-gray-100'}
-                                ${open ? 'bg-gray-100 text-gray-600' : ''}
-                              `}
-                              disabled={disabled}
-                            >
-                              <RiAttachmentLine className='h-5 w-5' />
-                            </button>
-                          )
+                      <div
+                        className={cn(
+                          'absolute right-0 bottom-full mb-2 w-[360px] rounded-2xl border border-gray-100 bg-white p-3 shadow-[0_12px_30px_rgba(24,39,75,0.08)]',
+                          !isAttachmentMenuOpen && 'hidden',
+                        )}
+                      >
+                        <FileUploaderInAttachmentWrapper
+                          fileConfig={mergedFileConfig}
+                          value={combinedFiles}
+                          onChange={(files) => {
+                            const images = files.filter(f => f.supportFileType === 'image')
+                            const attachments = files.filter(f => f.supportFileType !== 'image')
+                            setImageFiles(images)
+                            setAttachmentFiles(attachments)
+                          }}
+                          onHandleClipboardPasteFile={handleClipboardPasteReady}
+                          variant='default'
+                          listDisplay={canUploadImages ? 'image' : 'file'}
+                        />
+                      </div>
+                      <button
+                        type='button'
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-full',
+                          isAttachmentButtonDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'bg-white text-gray-500 hover:bg-gray-100',
+                          isAttachmentMenuOpen && !isAttachmentButtonDisabled && 'bg-gray-100 text-gray-600',
+                        )}
+                        disabled={isAttachmentButtonDisabled}
+                        onClick={() => {
+                          if (isAttachmentButtonDisabled) { return }
+                          setIsAttachmentMenuOpen(v => !v)
                         }}
-                        listClassName='absolute right-0 bottom-full mt-0 mb-2 w-[320px]'
-                      />
+                      >
+                        <RiAttachmentLine className='h-5 w-5' />
+                      </button>
                     </div>
                   )
                 }
@@ -260,19 +325,6 @@ const Chat: FC<IChatProps> = ({
                   <RiSendPlaneFill className='h-5 w-5' />
                 </button>
               </div>
-              {
-                visionConfig?.enabled && files.length > 0 && (
-                  <div className='pl-1'>
-                    <ImageList
-                      list={files}
-                      onRemove={onRemove}
-                      onReUpload={onReUpload}
-                      onImageLinkLoadSuccess={onImageLinkLoadSuccess}
-                      onImageLinkLoadError={onImageLinkLoadError}
-                    />
-                  </div>
-                )
-              }
             </div>
           </div>
         )

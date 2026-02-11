@@ -1,6 +1,6 @@
 import mime from 'mime'
 import { FileAppearanceTypeEnum, SupportUploadFileTypes } from './types'
-import type { FileEntity, FileResponse } from './types'
+import type { FileEntity, FileResponse, FileUpload } from './types'
 import { FILE_EXTS } from './constants'
 import { upload } from '@/service/base'
 import { TransferMethod } from '@/types/app'
@@ -11,8 +11,8 @@ interface FileUploadParams {
   onSuccessCallback: (res: { id: string }) => void
   onErrorCallback: () => void
 }
-type FileUpload = (v: FileUploadParams, isPublic?: boolean, url?: string) => void
-export const fileUpload: FileUpload = ({
+type FileUploadHandler = (v: FileUploadParams, isPublic?: boolean, url?: string) => void
+export const fileUpload: FileUploadHandler = ({
   file,
   onProgressCallback,
   onSuccessCallback,
@@ -97,12 +97,23 @@ export const getSupportFileType = (fileName: string, fileMimetype: string, isCus
 }
 
 export const getProcessedFiles = (files: FileEntity[]) => {
-  return files.filter(file => file.progress !== -1).map(fileItem => ({
-    type: fileItem.supportFileType,
-    transfer_method: fileItem.transferMethod,
-    url: fileItem.url || '',
-    upload_file_id: fileItem.uploadedId || '',
-  }))
+  return files
+    .filter(file => file.progress !== -1)
+    .map((fileItem) => {
+      const url = fileItem.url || (fileItem.transferMethod === TransferMethod.local_file ? fileItem.base64Url : '')
+      const baseInfo = {
+        type: fileItem.supportFileType,
+        transfer_method: fileItem.transferMethod,
+        url: url || '',
+      }
+      if (fileItem.transferMethod === TransferMethod.remote_url) {
+        return baseInfo
+      }
+      return {
+        ...baseInfo,
+        upload_file_id: fileItem.uploadedId || '',
+      }
+    })
 }
 
 export const getProcessedFilesFromResponse = (files: FileResponse[]) => {
@@ -122,8 +133,22 @@ export const getProcessedFilesFromResponse = (files: FileResponse[]) => {
 }
 
 export const getFileNameFromUrl = (url: string) => {
-  const urlParts = url.split('/')
-  return urlParts[urlParts.length - 1] || ''
+  const decode = (value: string) => {
+    try { return decodeURIComponent(value) }
+    catch {
+      return value
+    }
+  }
+  try {
+    const { pathname } = new URL(url)
+    const parts = pathname.split('/').filter(Boolean)
+    return decode(parts[parts.length - 1] || '')
+  }
+  catch {
+    const sanitizedUrl = url.split('#')[0].split('?')[0]
+    const urlParts = sanitizedUrl.split('/')
+    return decode(urlParts[urlParts.length - 1] || '')
+  }
 }
 
 export const getSupportFileExtensionList = (allowFileTypes: string[], allowFileExtensions: string[]) => {
@@ -134,6 +159,66 @@ export const getSupportFileExtensionList = (allowFileTypes: string[], allowFileE
 
 export const isAllowedFileExtension = (fileName: string, fileMimetype: string, allowFileTypes: string[], allowFileExtensions: string[]) => {
   return getSupportFileExtensionList(allowFileTypes, allowFileExtensions).includes(getFileExtension(fileName, fileMimetype).toUpperCase())
+}
+
+export const getFileLimitInfo = (fileConfig: FileUpload, files: FileEntity[]) => {
+  const imageCount = files.filter(file => file.supportFileType === SupportUploadFileTypes.image).length
+  const totalCount = files.length
+  const nonImageCount = totalCount - imageCount
+  const imageLimit = typeof fileConfig.image?.number_limits === 'number' ? fileConfig.image.number_limits : undefined
+  const totalLimit = typeof fileConfig.number_limits === 'number' ? fileConfig.number_limits : undefined
+
+  return {
+    imageCount,
+    nonImageCount,
+    totalCount,
+    imageLimit,
+    totalLimit,
+  }
+}
+
+export const canUploadMoreFiles = (fileType: string, fileConfig: FileUpload, files: FileEntity[]) => {
+  const {
+    imageCount,
+    nonImageCount,
+    totalCount,
+    imageLimit,
+    totalLimit,
+  } = getFileLimitInfo(fileConfig, files)
+  const hasImageLimit = typeof imageLimit === 'number'
+  const hasTotalLimit = typeof totalLimit === 'number'
+
+  if (fileType === SupportUploadFileTypes.image && hasImageLimit) { return imageCount < imageLimit }
+
+  if (hasImageLimit) {
+    if (!hasTotalLimit) { return true }
+    return nonImageCount < totalLimit
+  }
+
+  if (!hasTotalLimit) { return true }
+
+  return totalCount < totalLimit
+}
+
+export const hasAvailableFileSlot = (fileConfig: FileUpload, files: FileEntity[]) => {
+  const allowedFileTypes = fileConfig.allowed_file_types
+  if (!allowedFileTypes?.length) {
+    const { totalLimit, totalCount } = getFileLimitInfo(fileConfig, files)
+    if (!totalLimit && totalLimit !== 0) { return true }
+    return totalCount < totalLimit
+  }
+
+  return allowedFileTypes.some(type => canUploadMoreFiles(type, fileConfig, files))
+}
+
+export const getLimitForFileType = (fileType: string, fileConfig: FileUpload) => {
+  if (fileType === SupportUploadFileTypes.image && typeof fileConfig.image?.number_limits === 'number') {
+    return fileConfig.image.number_limits
+  }
+
+  if (typeof fileConfig.number_limits === 'number') { return fileConfig.number_limits }
+
+  return undefined
 }
 
 export const getFilesInLogs = (rawData: any) => {

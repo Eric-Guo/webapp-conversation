@@ -18,15 +18,16 @@ const translation = {
     dislike: 'dislike',
     ok: 'D\'accord',
   },
-  imageUploader: {
+  uploader: {
     uploadFromComputer: 'Télécharger depuis l\'ordinateur',
-    uploadFromComputerReadError: 'Édition de l\'image échouée, veuillez essayer à nouveau.',
-    uploadFromComputerUploadError: 'Édition de l\'image échouée, veuillez télécharger à nouveau.',
-    uploadFromComputerLimit: 'Les images téléchargées ne peuvent pas dépasser {{size}} Mo',
-    pasteImageLink: 'Coller le lien de l\'image',
-    pasteImageLinkInputPlaceholder: 'Coller le lien de l\'image ici',
-    pasteImageLinkInvalid: 'Lien d\'image invalide',
-    imageUpload: 'Téléchargement d\'image',
+    pasteFileLink: 'Coller le lien de fichier',
+    uploadFromComputerReadError: 'Échec de la lecture du fichier, veuillez réessayer.',
+    uploadFromComputerUploadError: 'Échec du téléchargement du fichier, veuillez télécharger à nouveau.',
+    uploadFromComputerLimit: 'Le fichier téléchargé ne peut pas dépasser {{size}}',
+    pasteFileLinkInvalid: 'Lien de fichier invalide',
+    fileExtensionNotSupport: 'Extension de fichier non supportée',
+    uploadCountLimit: 'Limite de fichiers atteinte',
+    pasteFileLinkInputPlaceholder: 'Coller le lien de fichier ici',
   },
 }
 

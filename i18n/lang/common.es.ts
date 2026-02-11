@@ -18,25 +18,16 @@ const translation = {
     dislike: 'No me gusta',
     ok: 'OK',
   },
-  imageUploader: {
-    uploadFromComputer: 'Subir desde el ordenador',
-    uploadFromComputerReadError: 'La lectura de la imagen falló, por favor inténtelo de nuevo.',
-    uploadFromComputerUploadError: 'Error al subir la imagen, por favor inténtelo de nuevo.',
-    uploadFromComputerLimit: 'Las imágenes subidas no pueden superar los {{size}} MB',
-    pasteImageLink: 'Pegar enlace de imagen',
-    pasteImageLinkInputPlaceholder: 'Pegar enlace de imagen aquí',
-    pasteImageLinkInvalid: 'Enlace de imagen no válido',
-    imageUpload: 'Subir imagen',
-  },
-  fileUploader: {
+  uploader: {
     uploadFromComputer: 'Carga local',
     pasteFileLink: 'Pegar enlace de archivo',
     uploadFromComputerReadError: 'Error en la lectura del archivo, inténtelo de nuevo.',
     uploadFromComputerUploadError: 'Error en la carga del archivo, vuelva a cargarlo.',
+    uploadFromComputerLimit: 'El archivo de carga no puede exceder {{size}}',
     pasteFileLinkInvalid: 'Enlace de archivo no válido',
     fileExtensionNotSupport: 'Extensión de archivo no compatible',
+    uploadCountLimit: 'Se alcanzó el límite de archivos',
     pasteFileLinkInputPlaceholder: 'Introduzca la URL...',
-    uploadFromComputerLimit: 'El archivo de carga no puede exceder {{size}}',
   },
 }
 

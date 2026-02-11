@@ -33,7 +33,7 @@ const ImageLinkInput: FC<ImageLinkInputProps> = ({
         className='system-sm-regular mr-0.5 block h-full grow appearance-none bg-transparent px-1 outline-none'
         value={imageLink}
         onChange={e => setImageLink(e.target.value)}
-        placeholder={t('common.imageUploader.pasteImageLinkInputPlaceholder') || ''}
+        placeholder={t('common.uploader.pasteFileLinkInputPlaceholder') || ''}
       />
       <Button
         type='primary'

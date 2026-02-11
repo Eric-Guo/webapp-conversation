@@ -2,7 +2,7 @@
 lock '~> 3.19.0'
 
 set :repo_url, 'https://git.thape.com.cn/ai/webapp-conversation.git'
-set :branch, 'sso_login'
+set :branch, 'unify_upload'
 
 # Default deploy_to directory is /var/www/changelog
 # set :deploy_to, "/var/www/changelog"
