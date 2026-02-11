@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Uploader from './uploader'
 import ImageLinkInput from './image-link-input'
-import ImagePlus from '@/app/components/base/icons/line/image-plus'
 import { TransferMethod } from '@/types/app'
 import {
   PortalToFollowElem,
@@ -11,7 +10,27 @@ import {
   PortalToFollowElemTrigger,
 } from '@/app/components/base/portal-to-follow-elem'
 import Upload03 from '@/app/components/base/icons/line/upload-03'
+import FolderUpload from '@/app/components/base/icons/other/folder-upload'
 import type { ImageFile, VisionSettings } from '@/types/app'
+
+interface UploadTriggerProps {
+  hovering?: boolean
+  disabled?: boolean
+}
+const UploadTrigger: FC<UploadTriggerProps> = ({
+  hovering,
+  disabled,
+}) => {
+  return (
+    <div className={`
+      relative flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200
+      ${disabled ? 'cursor-not-allowed bg-gray-50 text-gray-300' : 'cursor-pointer hover:bg-gray-50'}
+      ${hovering ? 'bg-gray-100' : ''}
+    `}>
+      <FolderUpload className={`h-4 w-4 ${disabled ? 'text-gray-300' : 'text-gray-500'}`} />
+    </div>
+  )
+}
 
 interface UploadOnlyFromLocalProps {
   onUpload: (imageFile: ImageFile) => void
@@ -27,12 +46,7 @@ const UploadOnlyFromLocal: FC<UploadOnlyFromLocalProps> = ({
     <Uploader onUpload={onUpload} disabled={disabled} limit={limit}>
       {
         hovering => (
-          <div className={`
-            relative flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer
-            ${hovering && 'bg-gray-100'}
-          `}>
-            <ImagePlus className='w-4 h-4 text-gray-500' />
-          </div>
+          <UploadTrigger hovering={hovering} disabled={disabled} />
         )
       }
     </Uploader>
@@ -74,30 +88,26 @@ const UploaderButton: FC<UploaderButtonProps> = ({
       placement='top-start'
     >
       <PortalToFollowElemTrigger onClick={handleToggle}>
-        <div className={`
-          relative flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-lg
-          ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-        `}>
-          <ImagePlus className='w-4 h-4 text-gray-500' />
-        </div>
+        <UploadTrigger disabled={disabled} />
       </PortalToFollowElemTrigger>
-      <PortalToFollowElemContent className='z-50'>
-        <div className='p-2 w-[260px] bg-white rounded-lg border-[0.5px] border-gray-200 shadow-lg'>
+      <PortalToFollowElemContent className='z-[1001]'>
+        <div className='w-[280px] rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur p-3 shadow-lg'>
           <ImageLinkInput onUpload={handleUpload} />
           {
             hasUploadFromLocal && (
               <>
-                <div className='flex items-center mt-2 px-2 text-xs font-medium text-gray-400'>
-                  <div className='mr-3 w-[93px] h-[1px] bg-gradient-to-l from-[#F3F4F6]' />
+                <div className='system-2xs-medium-uppercase flex h-7 items-center p-2 text-text-quaternary'>
+                  <div className='mr-2 h-[1px] w-[93px] bg-gradient-to-l from-[rgba(16,24,40,0.08)]' />
                   OR
-                  <div className='ml-3 w-[93px] h-[1px] bg-gradient-to-r from-[#F3F4F6]' />
+                  <div className='ml-2 h-[1px] w-[93px] bg-gradient-to-r from-[rgba(16,24,40,0.08)]' />
                 </div>
-                <Uploader onUpload={handleUpload} limit={limit}>
+                <Uploader onUpload={handleUpload} limit={limit} disabled={disabled}>
                   {
                     hovering => (
                       <div className={`
-                        flex items-center justify-center h-8 text-[13px] font-medium text-[#155EEF] rounded-lg cursor-pointer
-                        ${hovering && 'bg-primary-50'}
+                        relative flex h-9 w-full items-center justify-center rounded-lg border border-gray-200 text-sm font-medium text-gray-500
+                        ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'cursor-pointer bg-white hover:bg-white hover:shadow-sm hover:border-gray-300'}
+                        ${hovering && !disabled ? 'shadow-sm border-gray-300' : ''}
                       `}>
                         <Upload03 className='mr-1 w-4 h-4' />
                         {t('common.imageUploader.uploadFromComputer')}

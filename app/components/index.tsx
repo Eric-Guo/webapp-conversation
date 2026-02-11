@@ -1,11 +1,13 @@
 'use client'
 import type { FC } from 'react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import produce, { setAutoFreeze } from 'immer'
 import { useBoolean, useGetState } from 'ahooks'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import useConversation from '@/hooks/use-conversation'
 import Toast from '@/app/components/base/toast'
+import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
@@ -20,8 +22,12 @@ import Loading from '@/app/components/base/loading'
 import { replaceVarWithValues, userInputsFormToPromptVariables } from '@/utils/prompt'
 import AppUnavailable from '@/app/components/app-unavailable'
 import { API_KEY, APP_ID, APP_INFO, isShowPrompt, promptTemplate } from '@/config'
+import { OIDC_PROVIDER_ID } from '@/config/auth'
 import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
+import { isTimestampToday } from '@/utils/date'
+
+const MAX_CONVERSATION_LIMIT_TODAY = 42
 
 export interface IMainProps {
   params: any
@@ -29,9 +35,16 @@ export interface IMainProps {
 
 const Main: FC<IMainProps> = () => {
   const { t } = useTranslation()
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === 'authenticated'
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
+  const userLabel = session?.user?.name || session?.user?.email || ''
+  const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
+
+  const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
+  const handleSignOut = () => signOut({ callbackUrl: '/' })
 
   /*
   * app info
@@ -81,11 +94,16 @@ const Main: FC<IMainProps> = () => {
     setNewConversationInfo,
     setExistConversationInfo,
   } = useConversation()
-
+  const todayConversationCount = useMemo(
+    () => conversationList.filter(item => isTimestampToday(item.created_at)).length,
+    [conversationList],
+  )
+  const hasReachedConversationLimit = todayConversationCount >= MAX_CONVERSATION_LIMIT_TODAY
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew, getConversationIdChangeBecauseOfNew] = useGetState(false)
   const [isChatStarted, { setTrue: setChatStarted, setFalse: setChatNotStarted }] = useBoolean(false)
   const handleStartChat = (inputs: Record<string, any>) => {
-    createNewChat()
+    const hasCreated = createNewChat()
+    if (!hasCreated) { return }
     setConversationIdChangeBecauseOfNew(true)
     setCurrInputs(inputs)
     setChatStarted()
@@ -131,20 +149,21 @@ const Main: FC<IMainProps> = () => {
         const newChatList: ChatItem[] = generateNewChatListWithOpenStatement(notSyncToStateIntroduction, notSyncToStateInputs)
 
         data.forEach((item: any) => {
+          const messageFiles = item.message_files ? [...item.message_files] : []
           newChatList.push({
             id: `question-${item.id}`,
             content: item.query,
             isAnswer: false,
-            message_files: item.message_files?.filter((file: any) => file.belongs_to === 'user') || [],
+            message_files: messageFiles,
 
           })
           newChatList.push({
             id: item.id,
             content: item.answer,
-            agent_thoughts: addFileInfos(item.agent_thoughts ? sortAgentSorts(item.agent_thoughts) : item.agent_thoughts, item.message_files),
+            agent_thoughts: addFileInfos(item.agent_thoughts ? sortAgentSorts(item.agent_thoughts) : item.agent_thoughts, messageFiles),
             feedback: item.feedback,
             isAnswer: true,
-            message_files: item.message_files?.filter((file: any) => file.belongs_to === 'assistant') || [],
+            message_files: messageFiles,
           })
         })
         setChatList(newChatList)
@@ -153,11 +172,15 @@ const Main: FC<IMainProps> = () => {
 
     if (isNewConversation && isChatStarted) { setChatList(generateNewChatListWithOpenStatement()) }
   }
-  useEffect(handleConversationSwitch, [currConversationId, inited])
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    handleConversationSwitch()
+  }, [currConversationId, inited, isAuthenticated])
 
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
-      createNewChat()
+      const hasCreated = createNewChat()
+      if (!hasCreated) { return }
       setConversationIdChangeBecauseOfNew(true)
     }
     else {
@@ -187,8 +210,16 @@ const Main: FC<IMainProps> = () => {
   // user can not edit inputs if user had send message
   const canEditInputs = !chatList.some(item => item.isAnswer === false) && isNewConversation
   const createNewChat = () => {
+    if (hasReachedConversationLimit) {
+      Toast.notify({
+        type: 'error',
+        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
+      })
+      return false
+    }
+
     // if new chat is already exist, do not create new chat
-    if (conversationList.some(item => item.id === '-1')) { return }
+    if (conversationList.some(item => item.id === '-1')) { return true }
 
     setConversationList(produce(conversationList, (draft) => {
       draft.unshift({
@@ -199,6 +230,7 @@ const Main: FC<IMainProps> = () => {
         suggested_questions: suggestedQuestions,
       })
     }))
+    return true
   }
 
   // sometime introduction is not applied to state
@@ -222,15 +254,17 @@ const Main: FC<IMainProps> = () => {
 
   // init
   useEffect(() => {
+    if (!isAuthenticated) { return }
+
     if (!hasSetAppConfig) {
       setAppUnavailable(true)
       return
     }
     (async () => {
       try {
-        const [conversationData, appParams] = await Promise.all([fetchConversations(), fetchAppParams()])
+        const [conversationData, appParams] = await Promise.all([fetchConversations(userPrefix), fetchAppParams()])
         // handle current conversation id
-        const { data: conversations, error } = conversationData as { data: ConversationItem[], error: string }
+        const { data: conversations, error } = conversationData as { data: ConversationItem[], error?: string }
         if (error) {
           Toast.notify({ type: 'error', message: error })
           throw new Error(error)
@@ -290,7 +324,7 @@ const Main: FC<IMainProps> = () => {
         }
       }
     })()
-  }, [])
+  }, [hasSetAppConfig, isAuthenticated, userPrefix])
 
   const [isResponding, { setTrue: setRespondingTrue, setFalse: setRespondingFalse }] = useBoolean(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
@@ -298,6 +332,16 @@ const Main: FC<IMainProps> = () => {
   const logError = (message: string) => {
     notify({ type: 'error', message })
   }
+
+  // single-turn model: lock sending after one complete exchange
+  const hasConversationFinished = useMemo(() => {
+    const hasUserMessage = chatList.some(item => !item.isAnswer)
+    const hasAssistantMessage = chatList.some(item => item.isAnswer
+      && !item.isOpeningStatement
+      && !item.id?.startsWith('answer-placeholder')
+      && (!!item.content?.trim() || (item.agent_thoughts?.length ?? 0) > 0 || (item.message_files?.length ?? 0) > 0))
+    return hasUserMessage && hasAssistantMessage && !isResponding
+  }, [chatList, isResponding])
 
   const checkCanSend = () => {
     if (currConversationId !== '-1') { return true }
@@ -460,7 +504,8 @@ const Main: FC<IMainProps> = () => {
         if (hasError) { return }
 
         if (getConversationIdChangeBecauseOfNew()) {
-          const { data: allConversations }: any = await fetchConversations()
+          const conversationsResponse: any = await fetchConversations(userPrefix)
+          const { data: allConversations } = conversationsResponse
           const newItem: any = await generationConversationName(allConversations[0].id)
 
           const newAllConversations = produce(allConversations, (draft: any) => {
@@ -475,6 +520,7 @@ const Main: FC<IMainProps> = () => {
         setRespondingFalse()
       },
       onFile(file) {
+        responseItem.message_files = [...(responseItem.message_files || []), { ...file }]
         const lastThought = responseItem.agent_thoughts?.[responseItem.agent_thoughts?.length - 1]
         if (lastThought) { lastThought.message_files = [...(lastThought as any).message_files, { ...file }] }
 
@@ -642,7 +688,38 @@ const Main: FC<IMainProps> = () => {
         onCurrentIdChange={handleConversationIdChange}
         currentId={currConversationId}
         copyRight={APP_INFO.copyright || APP_INFO.title}
+        conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
       />
+    )
+  }
+
+  if (status === 'loading') { return <Loading type='app' /> }
+
+  if (!isAuthenticated) {
+    return (
+      <div className='flex items-center justify-center h-screen bg-gray-50 px-4'>
+        <div className='w-full max-w-md space-y-4 rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm'>
+          <div className='flex justify-center'>
+            <AppIcon size="large" />
+          </div>
+          <div className='space-y-1'>
+            <div className='text-xl font-semibold text-gray-900'>{APP_INFO.title || 'Chat APP'}</div>
+            <p className='text-sm text-gray-600'>{APP_INFO.description}</p>
+          </div>
+          {!hasSetAppConfig && (
+            <p className='text-xs text-left text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-3 py-2'>
+              Set NEXT_PUBLIC_APP_ID and NEXT_PUBLIC_APP_KEY to load the chat application after signing in.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleSignIn}
+            className='w-full inline-flex items-center justify-center h-10 px-4 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+          >
+            Continue with SSO
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -657,6 +734,10 @@ const Main: FC<IMainProps> = () => {
         isMobile={isMobile}
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
+        todayConversationCount={todayConversationCount}
+        todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        userLabel={userLabel}
+        onSignOut={handleSignOut}
       />
       <div className="flex rounded-t-2xl bg-white overflow-hidden">
         {/* sidebar */}
@@ -680,6 +761,8 @@ const Main: FC<IMainProps> = () => {
             canEditInputs={canEditInputs}
             savedInputs={currInputs as Record<string, any>}
             onInputsChange={setCurrInputs}
+            todayConversationCount={todayConversationCount}
+            todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
           ></ConfigSence>
 
           {
@@ -693,6 +776,7 @@ const Main: FC<IMainProps> = () => {
                   checkCanSend={checkCanSend}
                   visionConfig={visionConfig}
                   fileConfig={fileConfig}
+                  sendDisabled={hasConversationFinished}
                 />
               </div>)
           }

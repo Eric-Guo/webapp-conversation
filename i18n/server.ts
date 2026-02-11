@@ -25,6 +25,6 @@ export const getLocaleOnServer = async (): Promise<Locale> => {
   }
 
   // match locale
-  const matchedLocale = match(languages, locales, i18n.defaultLocale) as Locale
+  const matchedLocale = match(languages === 'zh-Hans' ? 'zh' : languages, locales, i18n.defaultLocale) as Locale
   return matchedLocale
 }

@@ -9,18 +9,18 @@ import { ChatBubbleOvalLeftEllipsisIcon as ChatBubbleOvalLeftEllipsisSolidIcon }
 import Button from '@/app/components/base/button'
 // import Card from './card'
 import type { ConversationItem } from '@/types/app'
+import { isTimestampToday } from '@/utils/date'
 
 function classNames(...classes: any[]) {
   return classes.filter(Boolean).join(' ')
 }
-
-const MAX_CONVERSATION_LENTH = 20
 
 export interface ISidebarProps {
   copyRight: string
   currentId: string
   onCurrentIdChange: (id: string) => void
   list: ConversationItem[]
+  conversationLimit?: number | null
 }
 
 const Sidebar: FC<ISidebarProps> = ({
@@ -28,13 +28,21 @@ const Sidebar: FC<ISidebarProps> = ({
   currentId,
   onCurrentIdChange,
   list,
+  conversationLimit,
 }) => {
   const { t } = useTranslation()
+  const todayConversationCount = React.useMemo(
+    () => list.filter(item => isTimestampToday(item.created_at)).length,
+    [list],
+  )
+  const maxConversationsToday = conversationLimit ?? Infinity
+  const canCreateConversation = todayConversationCount < maxConversationsToday
+
   return (
     <div
       className="shrink-0 flex flex-col overflow-y-auto bg-white pc:w-[244px] tablet:w-[192px] mobile:w-[240px]  border-r border-gray-200 tablet:h-[calc(100vh_-_3rem)] mobile:h-screen"
     >
-      {list.length < MAX_CONVERSATION_LENTH && (
+      {canCreateConversation && (
         <div className="flex flex-shrink-0 p-4 !pb-0">
           <Button
             onClick={() => { onCurrentIdChange('-1') }}

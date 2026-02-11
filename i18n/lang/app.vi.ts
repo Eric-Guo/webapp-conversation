@@ -16,6 +16,7 @@ const translation = {
     configDisabled:
       'Cài đặt của phiên trước đã được sử dụng cho phiên này.',
     startChat: 'Bắt đầu trò chuyện',
+    todayUsage: 'Today: {{count}} / {{limit}}',
     privacyPolicyLeft:
       'Vui lòng đọc ',
     privacyPolicyMiddle:
@@ -27,6 +28,7 @@ const translation = {
     valueOfVarRequired: 'Giá trị của biến không thể để trống',
     waitForResponse:
       'Vui lòng đợi phản hồi từ tin nhắn trước khi gửi tin nhắn mới.',
+    conversationLimitReached: 'Bạn đã đạt giới hạn cuộc trò chuyện hôm nay ({{limit}}).',
   },
   variableTable: {
     optional: 'Tùy chọn',

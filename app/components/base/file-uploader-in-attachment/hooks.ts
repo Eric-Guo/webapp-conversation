@@ -26,10 +26,7 @@ import { SupportUploadFileTypes } from './types'
 import { useToastContext } from '@/app/components/base/toast'
 import { TransferMethod } from '@/types/app'
 import { formatFileSize } from '@/utils/format'
-
-const uploadRemoteFileInfo = () => {
-  console.log('TODO')
-}
+import { uploadRemoteFileInfo } from '@/service/common'
 
 export const useFileSizeLimit = (fileUploadConfig?: FileUploadConfigResponse) => {
   const imgSizeLimit = Number(fileUploadConfig?.image_file_size_limit) * 1024 * 1024 || IMG_SIZE_LIMIT
@@ -188,7 +185,7 @@ export const useFile = (fileConfig: FileUpload) => {
           notify({ type: 'error', message: t('common.fileUploader.uploadFromComputerUploadError') })
           handleUpdateFile({ ...uploadingFile, progress: -1 })
         },
-      })
+      }, !!params.token)
     }
   }, [fileStore, notify, t, handleUpdateFile])
 
@@ -231,6 +228,7 @@ export const useFile = (fileConfig: FileUpload) => {
       if (!isAllowedFileExtension(res.name, res.mime_type, fileConfig.allowed_file_types || [], fileConfig.allowed_file_extensions || [])) {
         notify({ type: 'error', message: t('common.fileUploader.fileExtensionNotSupport') })
         handleRemoveFile(uploadingFile.id)
+        return
       }
       if (!checkSizeLimit(newFile.supportFileType, newFile.size)) { handleRemoveFile(uploadingFile.id) }
       else { handleUpdateFile(newFile) }
@@ -290,7 +288,7 @@ export const useFile = (fileConfig: FileUpload) => {
             notify({ type: 'error', message: t('common.fileUploader.uploadFromComputerUploadError') })
             handleUpdateFile({ ...uploadingFile, progress: -1 })
           },
-        })
+        }, !!params.token)
       },
       false,
     )
@@ -309,9 +307,21 @@ export const useFile = (fileConfig: FileUpload) => {
     const text = e.clipboardData?.getData('text/plain')
     if (file && !text) {
       e.preventDefault()
+      const allowedFileTypes = fileConfig.allowed_file_types || []
+      const fileType = getSupportFileType(file.name, file.type, allowedFileTypes?.includes(SupportUploadFileTypes.custom))
+      const isFileTypeAllowed = allowedFileTypes.includes(fileType)
+
+      if (!isFileTypeAllowed || !fileConfig.enabled) {
+        notify({
+          type: 'error',
+          message: t('common.fileUploader.fileExtensionNotSupport'),
+        })
+        return
+      }
+
       handleLocalFileUpload(file)
     }
-  }, [handleLocalFileUpload])
+  }, [fileConfig, handleLocalFileUpload, notify, t])
 
   const [isDragActive, setIsDragActive] = useState(false)
   const handleDragFileEnter = useCallback((e: React.DragEvent<HTMLElement>) => {

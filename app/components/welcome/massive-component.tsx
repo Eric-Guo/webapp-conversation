@@ -10,12 +10,19 @@ import s from './style.module.css'
 import type { AppInfo } from '@/types/app'
 import Button from '@/app/components/base/button'
 
-export const AppInfoComp: FC<{ siteInfo: AppInfo }> = ({ siteInfo }) => {
+export const AppInfoComp: FC<{ siteInfo: AppInfo, todayConversationCount?: number, todayConversationLimit?: number }> = ({
+  siteInfo,
+  todayConversationCount = 0,
+  todayConversationLimit = 0,
+}) => {
   const { t } = useTranslation()
   return (
     <div>
       <div className='flex items-center py-2 text-xl font-medium text-gray-700 rounded-md'>👏 {t('app.common.welcome')} {siteInfo.title}</div>
       <p className='text-sm text-gray-500'>{siteInfo.description}</p>
+      <div className='inline-flex items-center mt-2 px-2 py-1 bg-gray-50 text-xs text-gray-700 rounded-md border border-gray-200'>
+        {t('app.chat.todayUsage', { count: todayConversationCount, limit: todayConversationLimit })}
+      </div>
     </div>
   )
 }

@@ -15,6 +15,7 @@ const translation = {
     configStatusDes: '开始前，您可以修改对话设置',
     configDisabled: '此次会话已使用上次会话表单',
     startChat: '开始对话',
+    todayUsage: '今日对话：{{count}} / {{limit}}',
     privacyPolicyLeft: '请阅读由该应用开发者提供的',
     privacyPolicyMiddle: '隐私政策',
     privacyPolicyRight: '。',
@@ -22,6 +23,7 @@ const translation = {
   errorMessage: {
     valueOfVarRequired: '变量值必填',
     waitForResponse: '请等待上条信息响应完成',
+    conversationLimitReached: '已达今日对话上限 ({{limit}})。',
   },
   variableTable: {
     optional: '可选',
