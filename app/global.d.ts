@@ -13,12 +13,16 @@ interface SsoInternalMetrics {
 declare module 'next-auth' {
   interface Session {
     user: DefaultSession['user'] & {
+      clerk_code?: string | null
+      chinese_name?: string | null
       main_position?: SsoMainPosition | null
       internal_metrics?: SsoInternalMetrics | null
     }
   }
 
   interface User {
+    clerk_code?: string | null
+    chinese_name?: string | null
     main_position?: SsoMainPosition | null
     internal_metrics?: SsoInternalMetrics | null
   }
@@ -26,6 +30,8 @@ declare module 'next-auth' {
 
 declare module 'next-auth/jwt' {
   interface JWT {
+    clerk_code?: string | null
+    chinese_name?: string | null
     main_position?: SsoMainPosition | null
     internal_metrics?: SsoInternalMetrics | null
   }
