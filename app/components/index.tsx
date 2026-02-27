@@ -48,7 +48,7 @@ const Main: FC<IMainProps> = () => {
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
   const userTitle = session?.user?.main_position?.name || ''
-  const userNameOrEmail = session?.user?.name || session?.user?.email || ''
+  const userNameOrEmail = session?.user?.chinese_name || session?.user?.name || session?.user?.email || ''
   const normalizedUserName = (session?.user?.name || '').trim().toLowerCase()
   const userLabel = userNameOrEmail && userTitle ? `${userNameOrEmail} (${userTitle})` : userNameOrEmail || userTitle
   const userFunctionalCategory = (session?.user?.internal_metrics?.functional_category || session?.user?.main_position?.functional_category || '').trim()
