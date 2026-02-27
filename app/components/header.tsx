@@ -39,25 +39,21 @@ const Header: FC<IHeaderProps> = ({
   const { t } = useTranslation()
   return (
     <div className="shrink-0 flex items-center justify-between h-12 px-3 bg-gray-100">
-      {isMobile
-        ? (
+      <div className='flex items-center space-x-2 min-w-0'>
+        {isMobile && (
           <div
             className='flex items-center justify-center h-8 w-8 cursor-pointer'
             onClick={() => onShowSideBar?.()}
           >
             <Bars3Icon className="h-4 w-4 text-gray-500" />
           </div>
-        )
-        : <div></div>}
-      <div className='flex items-center space-x-2'>
+        )}
         <AppIcon size="small" />
         <div className=" text-sm text-gray-800 font-bold">{title}</div>
-      </div>
-      <div className='flex items-center space-x-2'>
         {!!onWorkPackageChange && (
-          <div className='hidden sm:flex items-center h-8 px-2 bg-white border border-gray-200 rounded-md max-w-[320px]'>
+          <div className='hidden sm:flex items-center h-8 px-2 bg-white border border-gray-200 rounded-md min-w-[400px]'>
             <select
-              className='w-[300px] text-xs text-gray-700 bg-transparent outline-none'
+              className='w-full text-xs text-gray-700 bg-transparent outline-none'
               value={selectedWorkPackageId}
               disabled={workPackageLoading || !workPackageOptions.length}
               onChange={e => onWorkPackageChange(e.target.value)}
@@ -75,6 +71,8 @@ const Header: FC<IHeaderProps> = ({
             </select>
           </div>
         )}
+      </div>
+      <div className='flex items-center space-x-2'>
         <div className="flex items-center h-8 px-2 text-[11px] text-gray-700 bg-white border border-gray-200 rounded-md whitespace-nowrap">
           {t('app.chat.todayUsage', { count: todayConversationCount, limit: todayConversationLimit })}
         </div>
