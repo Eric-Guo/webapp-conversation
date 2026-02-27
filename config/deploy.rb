@@ -2,7 +2,7 @@
 lock '~> 3.20.0'
 
 set :repo_url, 'https://git.thape.com.cn/ai/webapp-conversation.git'
-set :branch, 'rename_pin'
+set :branch, 'plm_work_package'
 
 # Default deploy_to directory is /var/www/changelog
 # set :deploy_to, "/var/www/changelog"
