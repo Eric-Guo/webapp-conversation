@@ -7,12 +7,17 @@ import {
 } from '@heroicons/react/24/solid'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import AppIcon from '@/app/components/base/app-icon'
+import type { WorkPackageOption } from '@/types/app'
 export interface IHeaderProps {
   title: string
   isMobile?: boolean
   onShowSideBar?: () => void
   onCreateNewChat?: () => void
   userLabel?: string
+  workPackageOptions?: WorkPackageOption[]
+  selectedWorkPackageId?: string
+  workPackageLoading?: boolean
+  onWorkPackageChange?: (workPackageId: string) => void
   onSignOut?: () => void
   todayConversationCount?: number
   todayConversationLimit?: number
@@ -23,6 +28,10 @@ const Header: FC<IHeaderProps> = ({
   onShowSideBar,
   onCreateNewChat,
   userLabel,
+  workPackageOptions = [],
+  selectedWorkPackageId = '',
+  workPackageLoading = false,
+  onWorkPackageChange,
   onSignOut,
   todayConversationCount = 0,
   todayConversationLimit = 0,
@@ -45,6 +54,27 @@ const Header: FC<IHeaderProps> = ({
         <div className=" text-sm text-gray-800 font-bold">{title}</div>
       </div>
       <div className='flex items-center space-x-2'>
+        {!!onWorkPackageChange && (
+          <div className='hidden sm:flex items-center h-8 px-2 bg-white border border-gray-200 rounded-md max-w-[320px]'>
+            <select
+              className='w-[300px] text-xs text-gray-700 bg-transparent outline-none'
+              value={selectedWorkPackageId}
+              disabled={workPackageLoading || !workPackageOptions.length}
+              onChange={e => onWorkPackageChange(e.target.value)}
+            >
+              {!workPackageOptions.length && (
+                <option value=''>
+                  {workPackageLoading ? '加载中...' : '暂无工作包'}
+                </option>
+              )}
+              {workPackageOptions.map(item => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex items-center h-8 px-2 text-[11px] text-gray-700 bg-white border border-gray-200 rounded-md whitespace-nowrap">
           {t('app.chat.todayUsage', { count: todayConversationCount, limit: todayConversationLimit })}
         </div>

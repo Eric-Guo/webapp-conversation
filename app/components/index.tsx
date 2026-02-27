@@ -11,8 +11,8 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
-import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
+import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, fetchWorkPackages, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
+import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings, WorkPackageOption } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
 import Chat from '@/app/components/chat'
@@ -55,6 +55,9 @@ const Main: FC<IMainProps> = () => {
   const hasHighConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) || HIGH_LIMIT_USERNAMES.has(normalizedUserName)
   const todayConversationLimit = hasHighConversationLimit ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
+  const [workPackageOptions, setWorkPackageOptions] = useState<WorkPackageOption[]>([])
+  const [selectedWorkPackageId, setSelectedWorkPackageId] = useState('')
+  const [workPackageLoading, setWorkPackageLoading] = useState(false)
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
   const handleSignOut = () => signOut({ callbackUrl: '/' })
@@ -157,6 +160,35 @@ const Main: FC<IMainProps> = () => {
     setConversationList(conversations as ConversationItem[])
     return conversations as ConversationItem[]
   }, [loadConversationData, setConversationList])
+  const refreshWorkPackageOptions = useCallback(async () => {
+    if (!session?.user?.clerk_code || !session?.user?.name) {
+      setWorkPackageOptions([])
+      setSelectedWorkPackageId('')
+      return
+    }
+
+    setWorkPackageLoading(true)
+    try {
+      const response = await fetchWorkPackages()
+      const options = Array.isArray((response as any)?.data)
+        ? (response as any).data as WorkPackageOption[]
+        : []
+
+      setWorkPackageOptions(options)
+      setSelectedWorkPackageId((prev) => {
+        if (prev && options.some(item => item.value === prev)) { return prev }
+        return options[0]?.value || ''
+      })
+    }
+    catch (error: any) {
+      Toast.notify({ type: 'error', message: error?.message || 'Failed to load work packages' })
+      setWorkPackageOptions([])
+      setSelectedWorkPackageId('')
+    }
+    finally {
+      setWorkPackageLoading(false)
+    }
+  }, [session?.user?.clerk_code, session?.user?.name])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -279,8 +311,14 @@ const Main: FC<IMainProps> = () => {
     handleConversationSwitch()
   }, [currConversationId, inited, isAuthenticated])
 
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    void refreshWorkPackageOptions()
+  }, [isAuthenticated, refreshWorkPackageOptions])
+
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
+      void refreshWorkPackageOptions()
       const hasCreated = createNewChat()
       if (!hasCreated) {
         setShouldAutoStartNewChat(false)
@@ -490,6 +528,7 @@ const Main: FC<IMainProps> = () => {
         else { toServerInputs[key] = value }
       })
     }
+    toServerInputs.work_package_id = selectedWorkPackageId || ''
 
     const data: Record<string, any> = {
       inputs: toServerInputs,
@@ -901,6 +940,10 @@ const Main: FC<IMainProps> = () => {
         onCreateNewChat={() => handleConversationIdChange('-1')}
         todayConversationCount={todayConversationCount}
         todayConversationLimit={todayConversationLimit}
+        workPackageOptions={workPackageOptions}
+        selectedWorkPackageId={selectedWorkPackageId}
+        workPackageLoading={workPackageLoading}
+        onWorkPackageChange={setSelectedWorkPackageId}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />

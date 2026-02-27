@@ -33,6 +33,11 @@ export interface SelectTypeFormItem {
   required: boolean
   options: string[]
 }
+
+export interface WorkPackageOption {
+  value: string
+  label: string
+}
 /**
  * User Input Form Item
  */
