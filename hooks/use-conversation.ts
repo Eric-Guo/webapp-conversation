@@ -5,7 +5,7 @@ import type { ConversationItem } from '@/types/app'
 
 const storageConversationIdKey = 'conversationIdInfo'
 
-type ConversationInfoType = Omit<ConversationItem, 'inputs' | 'id'>
+type ConversationInfoType = Omit<ConversationItem, 'inputs' | 'id' | 'pinned' | 'updated_at'>
 function useConversation() {
   const [conversationList, setConversationList] = useState<ConversationItem[]>([])
   const [currConversationId, doSetCurrConversationId, getCurrConversationId] = useGetState<string>('-1')

@@ -15,6 +15,7 @@ import type { FileEntity, FileUpload } from '@/app/components/base/file-uploader
 import { SupportUploadFileTypes } from '@/app/components/base/file-uploader-in-attachment/types'
 import { getProcessedFiles, hasAvailableFileSlot } from '@/app/components/base/file-uploader-in-attachment/utils'
 import { RiAttachmentLine, RiSendPlaneFill } from '@remixicon/react'
+import suggestionMap from './suggestion-map.json'
 
 export interface IChatProps {
   chatList: ChatItem[]
@@ -170,7 +171,7 @@ const Chat: FC<IChatProps> = ({
     if (isAttachmentButtonDisabled && isAttachmentMenuOpen) { setIsAttachmentMenuOpen(false) }
   }, [isAttachmentButtonDisabled, isAttachmentMenuOpen])
 
-  const handleSend = () => {
+  const handleSendMessage = () => {
     if (isSendButtonDisabled) { return }
     if (!valid() || (checkCanSend && !checkCanSend())) { return }
     const imageFilePayloads: VisionFile[] = getProcessedFiles(imageFiles)
@@ -193,7 +194,7 @@ const Chat: FC<IChatProps> = ({
     if (e.code === 'Enter') {
       e.preventDefault()
       // prevent send message when using input method enter
-      if (!e.shiftKey && !isUseInputMethod.current) { handleSend() }
+      if (!e.shiftKey && !isUseInputMethod.current) { handleSendMessage() }
     }
   }
 
@@ -209,9 +210,11 @@ const Chat: FC<IChatProps> = ({
 
   const suggestionClick = (suggestion: string) => {
     if (isSendButtonDisabled) { return }
-    setQuery(suggestion)
-    queryRef.current = suggestion
-    handleSend()
+    const current = queryRef.current
+    const resolvedSuggestion = suggestionMap[suggestion as keyof typeof suggestionMap] || suggestion
+    const nextQuery = current ? `${current.replace(/\s+$/, '')} ${resolvedSuggestion}` : resolvedSuggestion
+    setQuery(nextQuery)
+    queryRef.current = nextQuery
   }
 
   const getImageUrls = (files: VisionFile[] | undefined, belongsTo: 'user' | 'assistant') => {
@@ -318,7 +321,7 @@ const Chat: FC<IChatProps> = ({
                     'self-center flex h-10 w-10 items-center justify-center rounded-full',
                     isSendButtonDisabled ? 'cursor-not-allowed bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1a73e8] text-white shadow-md hover:bg-[#1669d0] active:bg-[#125cb8]',
                   )}
-                  onClick={handleSend}
+                  onClick={handleSendMessage}
                   aria-label={t('common.operation.send')}
                   disabled={isSendButtonDisabled}
                 >

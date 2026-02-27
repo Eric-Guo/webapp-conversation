@@ -9,6 +9,7 @@ import { AppInfoComp, ChatBtn, EditBtn, PromptTemplate } from './massive-compone
 import type { AppInfo, PromptConfig } from '@/types/app'
 import Toast from '@/app/components/base/toast'
 import Select from '@/app/components/base/select'
+import BoolInput from '@/app/components/bool-input'
 import { DEFAULT_VALUE_MAX_LEN } from '@/config'
 
 // regex to match the {{}} and replace it with a span
@@ -96,7 +97,9 @@ const Welcome: FC<IWelcomeProps> = ({
       <div className='space-y-3'>
         {promptConfig.prompt_variables.map(item => (
           <div className='tablet:flex items-start mobile:space-y-2 tablet:space-y-0 mobile:text-xs tablet:text-sm' key={item.key}>
-            <label className={`flex-shrink-0 flex items-center tablet:leading-9 mobile:text-gray-700 tablet:text-gray-900 mobile:font-medium pc:font-normal ${s.formLabel}`}>{item.name}</label>
+            <label className={`flex-shrink-0 flex items-center tablet:leading-9 mobile:text-gray-700 tablet:text-gray-900 mobile:font-medium pc:font-normal ${s.formLabel}`}>
+              {item.type === 'checkbox' ? '' : item.name}
+            </label>
             {item.type === 'select'
               && (
                 <Select
@@ -134,7 +137,16 @@ const Welcome: FC<IWelcomeProps> = ({
                 onChange={(e) => { onInputsChange({ ...inputs, [item.key]: e.target.value }) }}
               />
             )}
-
+            {item.type === 'checkbox' && (
+              <div className='flex-grow'>
+                <BoolInput
+                  name={item.name}
+                  value={!!inputs[item.key]}
+                  required={item.required}
+                  onChange={(value) => { onInputsChange({ ...inputs, [item.key]: value }) }}
+                />
+              </div>
+            )}
             {
               item.type === 'file' && (
                 <FileUploaderInAttachmentWrapper

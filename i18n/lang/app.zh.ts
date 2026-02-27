@@ -7,6 +7,22 @@ const translation = {
   chat: {
     newChat: '新对话',
     newChatDefaultName: '新的对话',
+    rename: '重命名',
+    renameConversation: '重命名对话',
+    conversationName: '对话名称',
+    conversationNamePlaceholder: '请输入对话名称',
+    conversationNameRequired: '对话名称不能为空',
+    renameConversationFailed: '重命名对话失败',
+    pin: '置顶',
+    unpin: '取消置顶',
+    delete: '删除',
+    pinned: '已置顶',
+    unpinned: '最近',
+    pinConversationFailed: '置顶对话失败',
+    unpinConversationFailed: '取消置顶失败',
+    deleteConversationTitle: '删除会话',
+    deleteConversationContent: '确定要删除此会话吗？此操作无法撤销。',
+    deleteConversationFailed: '删除会话失败',
     openingStatementTitle: '对话开场白',
     powerBy: 'Powered by',
     prompt: '提示词',
@@ -26,7 +42,7 @@ const translation = {
     conversationLimitReached: '已达今日对话上限 ({{limit}})。',
   },
   variableTable: {
-    optional: '可选',
+    optional: '(可选)',
   },
 }
 

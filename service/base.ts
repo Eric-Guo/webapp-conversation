@@ -422,6 +422,10 @@ export const post = (url: string, options = {}, otherOptions?: IOtherOptions) =>
   return request(url, Object.assign({}, options, { method: 'POST' }), otherOptions)
 }
 
+export const patch = (url: string, options = {}, otherOptions?: IOtherOptions) => {
+  return request(url, Object.assign({}, options, { method: 'PATCH' }), otherOptions)
+}
+
 export const put = (url: string, options = {}, otherOptions?: IOtherOptions) => {
   return request(url, Object.assign({}, options, { method: 'PUT' }), otherOptions)
 }

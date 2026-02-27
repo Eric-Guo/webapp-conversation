@@ -1,6 +1,6 @@
 'use client'
 import type { FC } from 'react'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import produce, { setAutoFreeze } from 'immer'
 import { useBoolean, useGetState } from 'ahooks'
@@ -11,7 +11,7 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { fetchAppParams, fetchChatList, fetchConversations, generationConversationName, sendChatMessage, updateFeedback } from '@/service'
+import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
 import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
@@ -27,7 +27,14 @@ import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 import { isTimestampToday } from '@/utils/date'
 
-const MAX_CONVERSATION_LIMIT_TODAY = 42
+const MAX_CONVERSATION_LIMIT_TODAY = 60
+const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
+const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
+const HIGH_LIMIT_USERNAMES = new Set([
+  'yangwenbiao', // 实习生
+  'zhangxingyu',
+  'liuzhaode',
+])
 
 export interface IMainProps {
   params: any
@@ -40,7 +47,13 @@ const Main: FC<IMainProps> = () => {
   const media = useBreakpoints()
   const isMobile = media === MediaType.mobile
   const hasSetAppConfig = APP_ID && API_KEY
-  const userLabel = session?.user?.name || session?.user?.email || ''
+  const userTitle = session?.user?.main_position?.name || ''
+  const userNameOrEmail = session?.user?.chinese_name || session?.user?.name || session?.user?.email || ''
+  const normalizedUserName = (session?.user?.name || '').trim().toLowerCase()
+  const userLabel = userNameOrEmail && userTitle ? `${userNameOrEmail} (${userTitle})` : userNameOrEmail || userTitle
+  const userFunctionalCategory = (session?.user?.internal_metrics?.functional_category || session?.user?.main_position?.functional_category || '').trim()
+  const hasHighConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) || HIGH_LIMIT_USERNAMES.has(normalizedUserName)
+  const todayConversationLimit = hasHighConversationLimit ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
@@ -98,7 +111,7 @@ const Main: FC<IMainProps> = () => {
     () => conversationList.filter(item => isTimestampToday(item.created_at)).length,
     [conversationList],
   )
-  const hasReachedConversationLimit = todayConversationCount >= MAX_CONVERSATION_LIMIT_TODAY
+  const hasReachedConversationLimit = todayConversationCount >= todayConversationLimit
   const [conversationIdChangeBecauseOfNew, setConversationIdChangeBecauseOfNew, getConversationIdChangeBecauseOfNew] = useGetState(false)
   const [shouldAutoStartNewChat, setShouldAutoStartNewChat] = useState(false)
   const [isChatStarted, { setTrue: setChatStarted, setFalse: setChatNotStarted }] = useBoolean(false)
@@ -118,6 +131,32 @@ const Main: FC<IMainProps> = () => {
   })()
 
   const conversationName = currConversationInfo?.name || t('app.chat.newChatDefaultName') as string
+  const normalizeConversations = useCallback((pinned: ConversationItem[] = [], unpinned: ConversationItem[] = []) => {
+    return [
+      ...pinned.map(item => ({ ...item, pinned: true })),
+      ...unpinned.map(item => ({ ...item, pinned: false })),
+    ]
+  }, [])
+  const mergeConversationData = useCallback((pinnedResponse: any, unpinnedResponse: any) => normalizeConversations(
+    (pinnedResponse as any)?.data || [],
+    (unpinnedResponse as any)?.data || [],
+  ), [normalizeConversations])
+  const loadConversationData = useCallback(async () => {
+    const [pinnedResponse, unpinnedResponse] = await Promise.all([
+      fetchConversations(userPrefix, true),
+      fetchConversations(userPrefix, false),
+    ])
+    const conversations = mergeConversationData(pinnedResponse, unpinnedResponse)
+
+    return { pinnedResponse, unpinnedResponse, conversations }
+  }, [mergeConversationData, userPrefix])
+  const refreshConversationList = useCallback(async () => {
+    const { pinnedResponse, unpinnedResponse, conversations } = await loadConversationData()
+    const error = (pinnedResponse as any)?.error || (unpinnedResponse as any)?.error
+    if (error) { throw new Error(error) }
+    setConversationList(conversations as ConversationItem[])
+    return conversations as ConversationItem[]
+  }, [loadConversationData, setConversationList])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -162,7 +201,7 @@ const Main: FC<IMainProps> = () => {
     if (hasReachedConversationLimit) {
       Toast.notify({
         type: 'error',
-        message: t('app.errorMessage.conversationLimitReached', { limit: MAX_CONVERSATION_LIMIT_TODAY }),
+        message: t('app.errorMessage.conversationLimitReached', { limit: todayConversationLimit }),
       })
       return false
     }
@@ -177,6 +216,7 @@ const Main: FC<IMainProps> = () => {
         inputs: newConversationInputs,
         introduction: conversationIntroduction,
         suggested_questions: suggestedQuestions,
+        pinned: false,
       })
     }))
     return true
@@ -290,13 +330,13 @@ const Main: FC<IMainProps> = () => {
     }
     (async () => {
       try {
-        const [conversationData, appParams] = await Promise.all([fetchConversations(userPrefix), fetchAppParams()])
-        // handle current conversation id
-        const { data: conversations, error } = conversationData as { data: ConversationItem[], error?: string }
+        const [{ pinnedResponse, unpinnedResponse, conversations }, appParams] = await Promise.all([loadConversationData(), fetchAppParams()])
+        const pinnedError = (pinnedResponse as any)?.error
+        const unpinnedError = (unpinnedResponse as any)?.error
+        const error = pinnedError || unpinnedError
         if (error) {
           Toast.notify({ type: 'error', message: error })
           throw new Error(error)
-          return
         }
         const _conversationId = getConversationIdFromStorage(APP_ID)
         const currentConversation = conversations.find(item => item.id === _conversationId)
@@ -352,7 +392,7 @@ const Main: FC<IMainProps> = () => {
         }
       }
     })()
-  }, [hasSetAppConfig, isAuthenticated, userPrefix])
+  }, [hasSetAppConfig, isAuthenticated, loadConversationData, normalizeConversations, userPrefix])
 
   const [isResponding, { setTrue: setRespondingTrue, setFalse: setRespondingFalse }] = useBoolean(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
@@ -540,14 +580,21 @@ const Main: FC<IMainProps> = () => {
         if (hasError) { return }
 
         if (getConversationIdChangeBecauseOfNew()) {
-          const conversationsResponse: any = await fetchConversations(userPrefix)
-          const { data: allConversations } = conversationsResponse
-          const newItem: any = await generationConversationName(allConversations[0].id)
-
-          const newAllConversations = produce(allConversations, (draft: any) => {
-            draft[0].name = newItem.name
-          })
-          setConversationList(newAllConversations as any)
+          try {
+            const conversations = await refreshConversationList()
+            const targetConversationId = tempNewConversationId || conversations[0]?.id
+            if (targetConversationId) {
+              const newItem: any = await generationConversationName(targetConversationId)
+              setConversationList(produce(conversations, (draft: any) => {
+                const index = draft.findIndex(item => item.id === targetConversationId)
+                if (index !== -1)
+                { draft[index].name = newItem.name }
+              }) as any)
+            }
+          }
+          catch (error: any) {
+            notify({ type: 'error', message: error?.message || t('app.chat.renameConversationFailed') })
+          }
         }
         setConversationIdChangeBecauseOfNew(false)
         resetNewConversationInputs()
@@ -701,6 +748,84 @@ const Main: FC<IMainProps> = () => {
     })
   }
 
+  const handleRenameConversation = async (id: string, newName: string) => {
+    const trimmedName = newName.trim()
+    if (!trimmedName) {
+      notify({ type: 'error', message: t('app.chat.conversationNameRequired') })
+      return
+    }
+    try {
+      await renameConversation(id, trimmedName)
+      setConversationList(produce(conversationList, (draft) => {
+        const index = draft.findIndex(item => item.id === id)
+        if (index !== -1)
+        { draft[index].name = trimmedName }
+      }))
+      if (currConversationId === id && !isNewConversation)
+      { setExistConversationInfo(prev => prev ? { ...prev, name: trimmedName } : prev) }
+
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.renameConversationFailed') })
+      throw error
+    }
+  }
+
+  const handlePinConversation = async (id: string) => {
+    try {
+      await pinConversation(id)
+      await refreshConversationList()
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.pinConversationFailed') })
+    }
+  }
+
+  const handleUnpinConversation = async (id: string) => {
+    try {
+      await unpinConversation(id)
+      await refreshConversationList()
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.unpinConversationFailed') })
+    }
+  }
+
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      await deleteConversation(id)
+      const isCurrent = currConversationId === id
+      setConversationList((prev) => {
+        const next = prev.filter(item => item.id !== id)
+        if (isCurrent && !next.some(item => item.id === '-1')) {
+          next.unshift({
+            id: '-1',
+            name: t('app.chat.newChatDefaultName'),
+            inputs: newConversationInputs,
+            introduction: conversationIntroduction,
+            suggested_questions: suggestedQuestions,
+            pinned: false,
+          })
+        }
+        return next
+      })
+      if (isCurrent) {
+        setConversationIdChangeBecauseOfNew(true)
+        setShouldAutoStartNewChat(true)
+        setChatNotStarted()
+        setCurrConversationId('-1', APP_ID)
+      }
+      notify({ type: 'success', message: t('common.api.success') })
+    }
+    catch (error: any) {
+      notify({ type: 'error', message: error?.message || t('app.chat.deleteConversationFailed') })
+      throw error
+    }
+  }
+
   const handleFeedback = async (messageId: string, feedback: Feedbacktype) => {
     await updateFeedback({ url: `/messages/${messageId}/feedbacks`, body: { rating: feedback.rating } })
     const newChatList = chatList.map((item) => {
@@ -724,7 +849,11 @@ const Main: FC<IMainProps> = () => {
         onCurrentIdChange={handleConversationIdChange}
         currentId={currConversationId}
         copyRight={APP_INFO.copyright || APP_INFO.title}
-        conversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        conversationLimit={todayConversationLimit}
+        onRenameConversation={handleRenameConversation}
+        onPinConversation={handlePinConversation}
+        onUnpinConversation={handleUnpinConversation}
+        onDeleteConversation={handleDeleteConversation}
       />
     )
   }
@@ -771,7 +900,7 @@ const Main: FC<IMainProps> = () => {
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
         todayConversationCount={todayConversationCount}
-        todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+        todayConversationLimit={todayConversationLimit}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
@@ -798,7 +927,7 @@ const Main: FC<IMainProps> = () => {
             savedInputs={currInputs as Record<string, any>}
             onInputsChange={setCurrInputs}
             todayConversationCount={todayConversationCount}
-            todayConversationLimit={MAX_CONVERSATION_LIMIT_TODAY}
+            todayConversationLimit={todayConversationLimit}
           ></ConfigSence>
 
           {
