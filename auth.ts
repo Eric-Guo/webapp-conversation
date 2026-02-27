@@ -124,11 +124,11 @@ const authConfig: NextAuthConfig = {
       authorization: { params: { scope: 'openid email profile departments positions main_position' } },
       checks: ['pkce', 'state', 'nonce'],
       profile(profile: Record<string, any>) {
-        const id = profile.email || profile.sub || profile.preferred_username || profile.id
+        const id = profile.email || profile.sub || profile.chinese_name || profile.id
         const mainPosition = normalizeMainPosition(profile.main_position)
         return {
           id,
-          name: profile.name || profile.preferred_username || profile.email || 'User',
+          name: profile.chinese_name || profile.email || 'User',
           email: profile.email ?? null,
           main_position: mainPosition,
           internal_metrics: buildInternalMetrics(mainPosition),
@@ -147,8 +147,8 @@ const authConfig: NextAuthConfig = {
     },
     async jwt({ token, profile, account, user }) {
       if (profile) {
-        token.email = profile.email || profile.preferred_username || token.email
-        token.name = profile.name || profile.preferred_username || profile.email || token.name
+        token.email = profile.email || token.email
+        token.name = profile.chinese_name || profile.email || token.name
         const profileMainPosition = normalizeMainPosition(profile.main_position)
         token.main_position = profileMainPosition || token.main_position
         token.internal_metrics = buildInternalMetrics(profileMainPosition, token.internal_metrics) || token.internal_metrics
@@ -168,8 +168,8 @@ const authConfig: NextAuthConfig = {
         // there is more data in userInfo if required.
         if (userInfo) {
           const userInfoMainPosition = normalizeMainPosition(userInfo.main_position)
-          token.email = userInfo.email || userInfo.preferred_username || token.email
-          token.name = userInfo.name || userInfo.preferred_username || userInfo.email || token.name
+          token.email = userInfo.email || token.email
+          token.name = userInfo.name || userInfo.chinese_name || userInfo.email || token.name
           token.main_position = userInfoMainPosition || token.main_position
           token.internal_metrics = buildInternalMetrics(userInfoMainPosition, token.internal_metrics) || token.internal_metrics
         }
