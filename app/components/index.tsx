@@ -218,17 +218,18 @@ const Main: FC<IMainProps> = () => {
       setSelectedWorkPackageId((prev) => {
         const persistedWorkPackageId = getStoredWorkPackageId()
         const nextWorkPackageId = persistedWorkPackageId || prev
+        const fallbackWorkPackageId = options[0]?.value || ''
         if (nextWorkPackageId && options.some(item => item.value === nextWorkPackageId)) {
           persistWorkPackageId(nextWorkPackageId)
           return nextWorkPackageId
         }
         if (nextWorkPackageId) {
           clearStoredWorkPackageId()
-          return ''
+          if (fallbackWorkPackageId) { persistWorkPackageId(fallbackWorkPackageId) }
+          return fallbackWorkPackageId
         }
-        const defaultWorkPackageId = options[0]?.value || ''
-        if (defaultWorkPackageId) { persistWorkPackageId(defaultWorkPackageId) }
-        return defaultWorkPackageId
+        if (fallbackWorkPackageId) { persistWorkPackageId(fallbackWorkPackageId) }
+        return fallbackWorkPackageId
       })
     }
     catch (error: any) {

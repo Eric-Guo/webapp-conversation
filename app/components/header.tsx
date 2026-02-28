@@ -63,6 +63,9 @@ const Header: FC<IHeaderProps> = ({
                   {workPackageLoading ? '加载中...' : '暂无工作包'}
                 </option>
               )}
+              {!!workPackageOptions.length && !selectedWorkPackageId && (
+                <option value=''>请选择工作包</option>
+              )}
               {workPackageOptions.map(item => (
                 <option key={item.value} value={item.value}>
                   {item.label}
