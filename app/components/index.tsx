@@ -29,6 +29,7 @@ import { isTimestampToday } from '@/utils/date'
 
 const MAX_CONVERSATION_LIMIT_TODAY = 60
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
+const storageWorkPackageIdKey = 'selectedWorkPackageIdInfo'
 const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
 const HIGH_LIMIT_USERNAMES = new Set([
   'yangwenbiao', // 实习生
@@ -58,6 +59,46 @@ const Main: FC<IMainProps> = () => {
   const [workPackageOptions, setWorkPackageOptions] = useState<WorkPackageOption[]>([])
   const [selectedWorkPackageId, setSelectedWorkPackageId] = useState('')
   const [workPackageLoading, setWorkPackageLoading] = useState(false)
+  const workPackageStorageId = useMemo(() => {
+    const clerkCode = session?.user?.clerk_code?.trim()
+    const userName = session?.user?.name?.trim()
+    if (!APP_ID || !clerkCode || !userName) { return '' }
+
+    return `${APP_ID}:${clerkCode}:${userName}`
+  }, [session?.user?.clerk_code, session?.user?.name])
+  const getStoredWorkPackageId = useCallback(() => {
+    if (!workPackageStorageId) { return '' }
+    try {
+      const raw = globalThis.localStorage?.getItem(storageWorkPackageIdKey)
+      if (!raw) { return '' }
+      const workPackageIdInfo = JSON.parse(raw) as Record<string, string>
+      const workPackageId = workPackageIdInfo[workPackageStorageId]
+      return typeof workPackageId === 'string' ? workPackageId : ''
+    }
+    catch {
+      return ''
+    }
+  }, [workPackageStorageId])
+  const persistWorkPackageId = useCallback((workPackageId: string) => {
+    if (!workPackageStorageId) { return }
+    try {
+      const raw = globalThis.localStorage?.getItem(storageWorkPackageIdKey)
+      const workPackageIdInfo = raw ? JSON.parse(raw) as Record<string, string> : {}
+      if (workPackageId) { workPackageIdInfo[workPackageStorageId] = workPackageId }
+      else { delete workPackageIdInfo[workPackageStorageId] }
+      globalThis.localStorage?.setItem(storageWorkPackageIdKey, JSON.stringify(workPackageIdInfo))
+    }
+    catch {
+      // ignore localStorage write errors
+    }
+  }, [workPackageStorageId])
+  const clearStoredWorkPackageId = useCallback(() => {
+    persistWorkPackageId('')
+  }, [persistWorkPackageId])
+  const handleWorkPackageChange = useCallback((workPackageId: string) => {
+    setSelectedWorkPackageId(workPackageId)
+    persistWorkPackageId(workPackageId)
+  }, [persistWorkPackageId])
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
   const handleSignOut = () => signOut({ callbackUrl: '/' })
@@ -163,7 +204,6 @@ const Main: FC<IMainProps> = () => {
   const refreshWorkPackageOptions = useCallback(async () => {
     if (!session?.user?.clerk_code || !session?.user?.name) {
       setWorkPackageOptions([])
-      setSelectedWorkPackageId('')
       return
     }
 
@@ -176,19 +216,29 @@ const Main: FC<IMainProps> = () => {
 
       setWorkPackageOptions(options)
       setSelectedWorkPackageId((prev) => {
-        if (prev && options.some(item => item.value === prev)) { return prev }
-        return options[0]?.value || ''
+        const persistedWorkPackageId = getStoredWorkPackageId()
+        const nextWorkPackageId = persistedWorkPackageId || prev
+        if (nextWorkPackageId && options.some(item => item.value === nextWorkPackageId)) {
+          persistWorkPackageId(nextWorkPackageId)
+          return nextWorkPackageId
+        }
+        if (nextWorkPackageId) {
+          clearStoredWorkPackageId()
+          return ''
+        }
+        const defaultWorkPackageId = options[0]?.value || ''
+        if (defaultWorkPackageId) { persistWorkPackageId(defaultWorkPackageId) }
+        return defaultWorkPackageId
       })
     }
     catch (error: any) {
       Toast.notify({ type: 'error', message: error?.message || 'Failed to load work packages' })
       setWorkPackageOptions([])
-      setSelectedWorkPackageId('')
     }
     finally {
       setWorkPackageLoading(false)
     }
-  }, [session?.user?.clerk_code, session?.user?.name])
+  }, [clearStoredWorkPackageId, getStoredWorkPackageId, persistWorkPackageId, session?.user?.clerk_code, session?.user?.name])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -315,6 +365,11 @@ const Main: FC<IMainProps> = () => {
     if (!isAuthenticated) { return }
     void refreshWorkPackageOptions()
   }, [isAuthenticated, refreshWorkPackageOptions])
+
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    setSelectedWorkPackageId(getStoredWorkPackageId())
+  }, [getStoredWorkPackageId, isAuthenticated])
 
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
@@ -943,7 +998,7 @@ const Main: FC<IMainProps> = () => {
         workPackageOptions={workPackageOptions}
         selectedWorkPackageId={selectedWorkPackageId}
         workPackageLoading={workPackageLoading}
-        onWorkPackageChange={setSelectedWorkPackageId}
+        onWorkPackageChange={handleWorkPackageChange}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
