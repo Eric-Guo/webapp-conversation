@@ -23,6 +23,10 @@ interface WorkPackageOption {
   label: string
 }
 
+interface PlmPayload {
+  grouped_by_date?: Record<string, PlmGroupedDay>
+}
+
 const normalizeOption = (projectName?: string, subject?: string, value?: string) => {
   const label = [projectName?.trim(), subject?.trim()].filter(Boolean).join(' ')
   return {
@@ -31,62 +35,111 @@ const normalizeOption = (projectName?: string, subject?: string, value?: string)
   }
 }
 
+const getFirstNameCandidates = (name?: string | null, email?: string | null) => {
+  const seen = new Set<string>()
+  const candidates: string[] = []
+
+  const appendCandidate = (candidate?: string | null) => {
+    if (typeof candidate !== 'string') { return }
+    const normalized = candidate.trim()
+    if (!normalized) { return }
+    const dedupedKey = normalized.toLowerCase()
+    if (seen.has(dedupedKey)) { return }
+    seen.add(dedupedKey)
+    candidates.push(normalized)
+  }
+
+  appendCandidate(name)
+
+  const nameLocalPart = typeof name === 'string' && name.includes('@') ? name.split('@')[0] : ''
+  appendCandidate(nameLocalPart)
+
+  const emailLocalPart = typeof email === 'string' && email.includes('@') ? email.split('@')[0] : ''
+  appendCandidate(emailLocalPart)
+
+  return candidates
+}
+
+const extractOptionsFromPayload = (payload?: PlmPayload) => {
+  const groupedByDate = payload?.grouped_by_date || {}
+  const optionMap = new Map<string, WorkPackageOption>()
+
+  Object.values(groupedByDate).forEach((group) => {
+    const projects = Array.isArray(group?.projects) ? group.projects : []
+
+    projects.forEach((project) => {
+      const projectName = typeof project?.name === 'string' ? project.name : ''
+      const workPackages = Array.isArray(project?.work_packages) ? project.work_packages : []
+
+      workPackages.forEach((workPackage) => {
+        if (workPackage?.disabled) { return }
+
+        const rawId = workPackage?.work_package_id
+        if (rawId === undefined || rawId === null || rawId === '') { return }
+
+        const value = String(rawId)
+        if (optionMap.has(value)) { return }
+
+        const option = normalizeOption(
+          projectName,
+          typeof workPackage?.subject === 'string' ? workPackage.subject : '',
+          value,
+        )
+
+        optionMap.set(value, option)
+      })
+    })
+  })
+
+  return Array.from(optionMap.values())
+}
+
 export async function GET() {
   const session = await auth()
   const clerkCode = session?.user?.clerk_code?.trim()
-  const firstName = session?.user?.name?.trim()
+  const firstNameCandidates = getFirstNameCandidates(session?.user?.name, session?.user?.email)
 
-  if (!clerkCode || !firstName) { return NextResponse.json({ data: [] }) }
-
-  const params = new URLSearchParams({
-    clerk_code: clerkCode,
-    first_name: firstName,
-  })
+  if (!clerkCode || !firstNameCandidates.length) { return NextResponse.json({ data: [] }) }
 
   try {
-    const response = await fetch(`${TODO_ENDPOINT}?${params.toString()}`, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    })
+    let lastFailureStatus: number | null = null
+    let latestSuccessfulEmptyOptions: WorkPackageOption[] | null = null
 
-    if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to fetch work packages', data: [] }, { status: response.status })
+    for (const firstName of firstNameCandidates) {
+      const params = new URLSearchParams({
+        clerk_code: clerkCode,
+        first_name: firstName,
+      })
+      const response = await fetch(`${TODO_ENDPOINT}?${params.toString()}`, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        lastFailureStatus = response.status
+        continue
+      }
+
+      try {
+        const payload = await response.json() as PlmPayload
+        const options = extractOptionsFromPayload(payload)
+
+        if (options.length) { return NextResponse.json({ data: options }) }
+
+        latestSuccessfulEmptyOptions = options
+      }
+      catch {
+        lastFailureStatus = 500
+      }
     }
 
-    const payload = await response.json() as { grouped_by_date?: Record<string, PlmGroupedDay> }
-    const groupedByDate = payload?.grouped_by_date || {}
+    if (latestSuccessfulEmptyOptions) { return NextResponse.json({ data: latestSuccessfulEmptyOptions }) }
+    if (lastFailureStatus) {
+      return NextResponse.json({ error: 'Failed to fetch work packages', data: [] }, { status: lastFailureStatus })
+    }
 
-    const optionMap = new Map<string, WorkPackageOption>()
-
-    Object.values(groupedByDate).forEach((group) => {
-      const projects = Array.isArray(group?.projects) ? group.projects : []
-
-      projects.forEach((project) => {
-        const projectName = typeof project?.name === 'string' ? project.name : ''
-        const workPackages = Array.isArray(project?.work_packages) ? project.work_packages : []
-
-        workPackages.forEach((workPackage) => {
-          if (workPackage?.disabled) { return }
-
-          const rawId = workPackage?.work_package_id
-          if (rawId === undefined || rawId === null || rawId === '') { return }
-
-          const value = String(rawId)
-          if (optionMap.has(value)) { return }
-
-          const option = normalizeOption(
-            projectName,
-            typeof workPackage?.subject === 'string' ? workPackage.subject : '',
-            value,
-          )
-
-          optionMap.set(value, option)
-        })
-      })
-    })
-
-    return NextResponse.json({ data: Array.from(optionMap.values()) })
+    return NextResponse.json({ data: [] })
   }
   catch {
     return NextResponse.json({ error: 'Failed to fetch work packages', data: [] }, { status: 500 })
