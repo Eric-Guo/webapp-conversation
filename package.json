@@ -52,7 +52,7 @@
     "react-error-boundary": "^4.1.2",
     "react-headless-pagination": "^1.1.6",
     "react-i18next": "^12.3.1",
-    "sass": "^1.97.3",
+    "sass": "^1.98.0",
     "scheduler": "^0.23.2",
     "server-only": "^0.0.1",
     "swr": "^2.4.1",
@@ -89,5 +89,5 @@
       "eslint --fix"
     ]
   },
-  "packageManager": "pnpm@10.31.0"
+  "packageManager": "pnpm@10.32.1"
 }
