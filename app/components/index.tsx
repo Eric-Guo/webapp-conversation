@@ -30,7 +30,7 @@ import { isTimestampToday } from '@/utils/date'
 const MAX_CONVERSATION_LIMIT_TODAY = 100
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
 const storageWorkPackageIdKey = 'selectedWorkPackageIdInfo'
-const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '子公司品牌公关', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
+const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '子公司景观', '子公司品牌公关', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
 const HIGH_LIMIT_USERNAMES = new Set([
   'yangwenbiao', // 实习生
   'zhangxingyu',
