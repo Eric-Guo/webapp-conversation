@@ -35,6 +35,7 @@ const HIGH_LIMIT_USERNAMES = new Set([
   'yangwenbiao', // 实习生
   'zhangxingyu',
   'liuzhaode',
+  'yezijin', // 设总
 ])
 
 export interface IMainProps {
