@@ -990,7 +990,15 @@ const Main: FC<IMainProps> = () => {
   if (!APP_ID || !APP_INFO || !promptConfig) { return <Loading type='app' /> }
 
   return (
-    <div className='bg-gray-100'>
+    <div className='flex h-screen flex-col bg-gray-100'>
+      <a
+        className='shrink-0 flex items-center justify-center bg-amber-50 px-3 py-2 text-center text-sm font-medium leading-5 text-amber-900 ring-1 ring-inset ring-amber-200 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500'
+        href='https://teamshare.thape.com.cn/inspiration'
+        target='_blank'
+        rel='noreferrer'
+      >
+        全新的小天书灵感已经上线，支持多轮对话，Nano Banana 2，Flux！点击前往使用
+      </a>
       <Header
         title={APP_INFO.title}
         isMobile={isMobile}
@@ -1005,7 +1013,7 @@ const Main: FC<IMainProps> = () => {
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
-      <div className="flex rounded-t-2xl bg-white overflow-hidden">
+      <div className="flex min-h-0 flex-1 rounded-t-2xl bg-white overflow-hidden">
         {/* sidebar */}
         {!isMobile && renderSidebar()}
         {isMobile && isShowSidebar && (
@@ -1016,7 +1024,7 @@ const Main: FC<IMainProps> = () => {
           </div>
         )}
         {/* main */}
-        <div className='flex-grow flex flex-col h-[calc(100vh_-_3rem)] overflow-y-auto'>
+        <div className='flex-grow flex flex-col h-full overflow-y-auto'>
           <ConfigSence
             conversationName={conversationName}
             hasSetInputs={hasSetInputs}
