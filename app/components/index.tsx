@@ -993,7 +993,7 @@ const Main: FC<IMainProps> = () => {
     <div className='flex h-screen flex-col bg-gray-100'>
       <a
         className='shrink-0 flex items-center justify-center bg-amber-50 px-3 py-2 text-center text-sm font-medium leading-5 text-amber-900 ring-1 ring-inset ring-amber-200 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500'
-        href='https://teamshare.thape.com.cn/inspiration'
+        href='https://teamshare.thape.com.cn/inspiration/chat'
         target='_blank'
         rel='noreferrer'
       >
