@@ -27,7 +27,7 @@ import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 import { isTimestampToday } from '@/utils/date'
 
-const MAX_CONVERSATION_LIMIT_TODAY = 30
+const MAX_CONVERSATION_LIMIT_TODAY = 5
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
 const storageWorkPackageIdKey = 'selectedWorkPackageIdInfo'
 const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '子公司景观', '子公司规划', '子公司品牌公关', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
