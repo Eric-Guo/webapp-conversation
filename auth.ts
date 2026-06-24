@@ -215,7 +215,7 @@ const authConfig: NextAuthConfig = {
         session.user.chinese_name = (token.chinese_name as string) || session.user.chinese_name || null
         session.user.clerk_code = (token.clerk_code as string) || session.user.clerk_code || null
         session.user.email = (token.email as string) || session.user.email || null
-        session.user.name = (token.name as string) || session.user.name || null
+        session.user.name = (token.name as string) || session.user.name || null // replace gongzhuyuan or other user to simulate
         session.user.main_position = (token.main_position as MainPosition | null) || session.user.main_position || null
         session.user.internal_metrics = (token.internal_metrics as InternalMetrics | null) || session.user.internal_metrics || null
       }

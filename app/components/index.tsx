@@ -11,8 +11,8 @@ import AppIcon from '@/app/components/base/app-icon'
 import Sidebar from '@/app/components/sidebar'
 import ConfigSence from '@/app/components/config-scence'
 import Header from '@/app/components/header'
-import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
-import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings } from '@/types/app'
+import { deleteConversation, fetchAppParams, fetchChatList, fetchConversations, fetchWorkPackages, generationConversationName, pinConversation, renameConversation, sendChatMessage, unpinConversation, updateFeedback } from '@/service'
+import type { ChatItem, ConversationItem, Feedbacktype, PromptConfig, VisionFile, VisionSettings, WorkPackageOption } from '@/types/app'
 import type { FileUpload } from '@/app/components/base/file-uploader-in-attachment/types'
 import { Resolution, TransferMethod, WorkflowRunningStatus } from '@/types/app'
 import Chat from '@/app/components/chat'
@@ -27,13 +27,16 @@ import type { Annotation as AnnotationType } from '@/types/log'
 import { addFileInfos, sortAgentSorts } from '@/utils/tools'
 import { isTimestampToday } from '@/utils/date'
 
-const MAX_CONVERSATION_LIMIT_TODAY = 60
+const MAX_CONVERSATION_LIMIT_TODAY = 5
 const DEFAULT_CONVERSATION_LIMIT_TODAY = 5
-const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
+const storageWorkPackageIdKey = 'selectedWorkPackageIdInfo'
+const HIGH_LIMIT_FUNCTIONAL_CATEGORIES = new Set(['AICO方案', '子公司方案', '子公司景观', '子公司规划', '子公司品牌公关', '集团方案', 'EID方案', '集团品牌公关', '集团方案专业管理', '集团信息化', '子公司方案专业管理'])
 const HIGH_LIMIT_USERNAMES = new Set([
   'yangwenbiao', // 实习生
   'zhangxingyu',
   'liuzhaode',
+  'yezijin', // 设总
+  'jixiao', // 资深专项设计师
 ])
 
 export interface IMainProps {
@@ -55,6 +58,49 @@ const Main: FC<IMainProps> = () => {
   const hasHighConversationLimit = HIGH_LIMIT_FUNCTIONAL_CATEGORIES.has(userFunctionalCategory) || HIGH_LIMIT_USERNAMES.has(normalizedUserName)
   const todayConversationLimit = hasHighConversationLimit ? MAX_CONVERSATION_LIMIT_TODAY : DEFAULT_CONVERSATION_LIMIT_TODAY
   const userPrefix = session?.user?.name ? `user_${APP_ID}_${session.user.name}:` : ''
+  const [workPackageOptions, setWorkPackageOptions] = useState<WorkPackageOption[]>([])
+  const [selectedWorkPackageId, setSelectedWorkPackageId] = useState('')
+  const [workPackageLoading, setWorkPackageLoading] = useState(false)
+  const workPackageStorageId = useMemo(() => {
+    const clerkCode = session?.user?.clerk_code?.trim()
+    const userName = session?.user?.name?.trim()
+    if (!APP_ID || !clerkCode || !userName) { return '' }
+
+    return `${APP_ID}:${clerkCode}:${userName}`
+  }, [session?.user?.clerk_code, session?.user?.name])
+  const getStoredWorkPackageId = useCallback(() => {
+    if (!workPackageStorageId) { return '' }
+    try {
+      const raw = globalThis.localStorage?.getItem(storageWorkPackageIdKey)
+      if (!raw) { return '' }
+      const workPackageIdInfo = JSON.parse(raw) as Record<string, string>
+      const workPackageId = workPackageIdInfo[workPackageStorageId]
+      return typeof workPackageId === 'string' ? workPackageId : ''
+    }
+    catch {
+      return ''
+    }
+  }, [workPackageStorageId])
+  const persistWorkPackageId = useCallback((workPackageId: string) => {
+    if (!workPackageStorageId) { return }
+    try {
+      const raw = globalThis.localStorage?.getItem(storageWorkPackageIdKey)
+      const workPackageIdInfo = raw ? JSON.parse(raw) as Record<string, string> : {}
+      if (workPackageId) { workPackageIdInfo[workPackageStorageId] = workPackageId }
+      else { delete workPackageIdInfo[workPackageStorageId] }
+      globalThis.localStorage?.setItem(storageWorkPackageIdKey, JSON.stringify(workPackageIdInfo))
+    }
+    catch {
+      // ignore localStorage write errors
+    }
+  }, [workPackageStorageId])
+  const clearStoredWorkPackageId = useCallback(() => {
+    persistWorkPackageId('')
+  }, [persistWorkPackageId])
+  const handleWorkPackageChange = useCallback((workPackageId: string) => {
+    setSelectedWorkPackageId(workPackageId)
+    persistWorkPackageId(workPackageId)
+  }, [persistWorkPackageId])
 
   const handleSignIn = () => signIn(OIDC_PROVIDER_ID)
   const handleSignOut = () => signOut({ callbackUrl: '/' })
@@ -157,6 +203,45 @@ const Main: FC<IMainProps> = () => {
     setConversationList(conversations as ConversationItem[])
     return conversations as ConversationItem[]
   }, [loadConversationData, setConversationList])
+  const refreshWorkPackageOptions = useCallback(async () => {
+    if (!session?.user?.clerk_code || !session?.user?.name) {
+      setWorkPackageOptions([])
+      return
+    }
+
+    setWorkPackageLoading(true)
+    try {
+      const response = await fetchWorkPackages()
+      const options = Array.isArray((response as any)?.data)
+        ? (response as any).data as WorkPackageOption[]
+        : []
+
+      setWorkPackageOptions(options)
+      setSelectedWorkPackageId((prev) => {
+        const persistedWorkPackageId = getStoredWorkPackageId()
+        const nextWorkPackageId = persistedWorkPackageId || prev
+        const fallbackWorkPackageId = options[0]?.value || ''
+        if (nextWorkPackageId && options.some(item => item.value === nextWorkPackageId)) {
+          persistWorkPackageId(nextWorkPackageId)
+          return nextWorkPackageId
+        }
+        if (nextWorkPackageId) {
+          clearStoredWorkPackageId()
+          if (fallbackWorkPackageId) { persistWorkPackageId(fallbackWorkPackageId) }
+          return fallbackWorkPackageId
+        }
+        if (fallbackWorkPackageId) { persistWorkPackageId(fallbackWorkPackageId) }
+        return fallbackWorkPackageId
+      })
+    }
+    catch (error: any) {
+      Toast.notify({ type: 'error', message: error?.message || 'Failed to load work packages' })
+      setWorkPackageOptions([])
+    }
+    finally {
+      setWorkPackageLoading(false)
+    }
+  }, [clearStoredWorkPackageId, getStoredWorkPackageId, persistWorkPackageId, session?.user?.clerk_code, session?.user?.name])
   const conversationIntroduction = currConversationInfo?.introduction || ''
   const suggestedQuestions = currConversationInfo?.suggested_questions || []
 
@@ -279,8 +364,19 @@ const Main: FC<IMainProps> = () => {
     handleConversationSwitch()
   }, [currConversationId, inited, isAuthenticated])
 
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    void refreshWorkPackageOptions()
+  }, [isAuthenticated, refreshWorkPackageOptions])
+
+  useEffect(() => {
+    if (!isAuthenticated) { return }
+    setSelectedWorkPackageId(getStoredWorkPackageId())
+  }, [getStoredWorkPackageId, isAuthenticated])
+
   const handleConversationIdChange = (id: string) => {
     if (id === '-1') {
+      void refreshWorkPackageOptions()
       const hasCreated = createNewChat()
       if (!hasCreated) {
         setShouldAutoStartNewChat(false)
@@ -490,6 +586,7 @@ const Main: FC<IMainProps> = () => {
         else { toServerInputs[key] = value }
       })
     }
+    toServerInputs.work_package_id = selectedWorkPackageId || ''
 
     const data: Record<string, any> = {
       inputs: toServerInputs,
@@ -893,7 +990,15 @@ const Main: FC<IMainProps> = () => {
   if (!APP_ID || !APP_INFO || !promptConfig) { return <Loading type='app' /> }
 
   return (
-    <div className='bg-gray-100'>
+    <div className='flex h-screen flex-col bg-gray-100'>
+      <a
+        className='shrink-0 flex items-center justify-center bg-amber-50 px-3 py-2 text-center text-sm font-medium leading-5 text-amber-900 ring-1 ring-inset ring-amber-200 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500'
+        href='https://teamshare.thape.com.cn/inspiration/chat'
+        target='_blank'
+        rel='noreferrer'
+      >
+        全新的小天书灵感已经上线，支持多轮对话，Nano Banana 2，Flux！点击前往使用
+      </a>
       <Header
         title={APP_INFO.title}
         isMobile={isMobile}
@@ -901,10 +1006,14 @@ const Main: FC<IMainProps> = () => {
         onCreateNewChat={() => handleConversationIdChange('-1')}
         todayConversationCount={todayConversationCount}
         todayConversationLimit={todayConversationLimit}
+        workPackageOptions={workPackageOptions}
+        selectedWorkPackageId={selectedWorkPackageId}
+        workPackageLoading={workPackageLoading}
+        onWorkPackageChange={handleWorkPackageChange}
         userLabel={userLabel}
         onSignOut={handleSignOut}
       />
-      <div className="flex rounded-t-2xl bg-white overflow-hidden">
+      <div className="flex min-h-0 flex-1 rounded-t-2xl bg-white overflow-hidden">
         {/* sidebar */}
         {!isMobile && renderSidebar()}
         {isMobile && isShowSidebar && (
@@ -915,7 +1024,7 @@ const Main: FC<IMainProps> = () => {
           </div>
         )}
         {/* main */}
-        <div className='flex-grow flex flex-col h-[calc(100vh_-_3rem)] overflow-y-auto'>
+        <div className='flex-grow flex flex-col h-full overflow-y-auto'>
           <ConfigSence
             conversationName={conversationName}
             hasSetInputs={hasSetInputs}
